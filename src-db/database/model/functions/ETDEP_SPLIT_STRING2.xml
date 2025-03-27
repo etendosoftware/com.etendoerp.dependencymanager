@@ -5,7 +5,7 @@
         <default/>
       </parameter>
       <body><![CDATA[BEGIN
-  RETURN etdep_split_string(p_string, '.', 2);
+  RETURN etdep_split_part(p_string, '.', 2);
 END ETDEP_SPLIT_STRING2
 ]]></body>
     </function>

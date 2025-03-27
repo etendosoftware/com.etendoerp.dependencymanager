@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+  <database name="FUNCTION ETDEP_SPLIT_PART">
+    <function name="ETDEP_SPLIT_PART" type="NUMERIC">
+      <parameter name="p_string" type="VARCHAR" mode="in">
+        <default/>
+      </parameter>
+      <parameter name="p_delimiter" type="VARCHAR" mode="in">
+        <default/>
+      </parameter>
+      <parameter name="p_position" type="NUMERIC" mode="in">
+        <default/>
+      </parameter>
+      <body><![CDATA[v_start      INTEGER := 1;
+    v_end        INTEGER;
+    v_counter    INTEGER := 0;
+    v_from_pos   INTEGER := 1;
+    v_temp_pos   INTEGER;
+    v_substring  VARCHAR(100);
+BEGIN
+    IF p_position = 0 OR p_delimiter IS NULL THEN
+        RETURN NULL;
+    END IF;
+
+    LOOP
+        v_temp_pos := POSITION(p_delimiter IN SUBSTR(p_string, v_from_pos));
+        EXIT WHEN v_temp_pos = 0;
+
+        v_counter := v_counter + 1;
+
+        IF v_counter = p_position THEN
+            v_start := v_from_pos;
+            v_end := v_from_pos + v_temp_pos - 2;
+            EXIT;
+        END IF;
+
+        v_from_pos := v_from_pos + v_temp_pos;
+    END LOOP;
+
+    IF v_counter < p_position THEN
+        RETURN NULL;
+    END IF;
+
+    v_substring := SUBSTR(p_string, v_start, v_end - v_start + 1);
+    RETURN CAST(v_substring AS NUMBER);
+END ETDEP_SPLIT_PART
+]]></body>
+    </function>
+  </database>

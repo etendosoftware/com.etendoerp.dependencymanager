@@ -5,7 +5,7 @@
         <default/>
       </parameter>
       <body><![CDATA[BEGIN
-  RETURN etdep_split_string(p_string::text, '.'::varchar, 1);
+  RETURN etdep_split_part(p_string, '.', 1);
 END ETDEP_SPLIT_STRING1
 ]]></body>
     </function>
