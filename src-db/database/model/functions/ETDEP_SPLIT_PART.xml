@@ -22,7 +22,7 @@ BEGIN
     END IF;
 
     LOOP
-        v_temp_pos := POSITION(p_delimiter IN SUBSTR(p_string, v_from_pos));
+        v_temp_pos := INSTR(p_delimiter, p_string, v_from_pos);
         EXIT WHEN v_temp_pos = 0;
 
         v_counter := v_counter + 1;
