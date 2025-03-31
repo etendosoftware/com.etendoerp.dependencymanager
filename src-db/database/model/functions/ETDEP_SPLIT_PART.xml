@@ -16,31 +16,38 @@
     v_from_pos   INTEGER := 1;
     v_temp_pos   INTEGER;
     v_substring  VARCHAR(100);
+    v_input      VARCHAR(4000);
 BEGIN
-    IF p_position = 0 OR p_delimiter IS NULL THEN
+    v_input := p_string;
+
+    IF INSTR(p_string, '-', 1) > 0 THEN
+        v_input := SUBSTR(p_string, 1, INSTR(p_string, '-') - 1);
+    END IF;
+
+	IF p_position = 0 OR p_delimiter IS NULL THEN
         RETURN NULL;
     END IF;
 
     LOOP
-        v_temp_pos := INSTR(p_delimiter, p_string, v_from_pos);
+        v_temp_pos := INSTR(v_input, p_delimiter, v_from_pos);
         EXIT WHEN v_temp_pos = 0;
 
         v_counter := v_counter + 1;
 
         IF v_counter = p_position THEN
             v_start := v_from_pos;
-            v_end := v_from_pos + v_temp_pos - 2;
+            v_end := v_temp_pos - 1;
             EXIT;
         END IF;
 
-        v_from_pos := v_from_pos + v_temp_pos;
+        v_from_pos := v_temp_pos + LENGTH(p_delimiter);
     END LOOP;
 
     IF v_counter < p_position THEN
         RETURN NULL;
     END IF;
 
-    v_substring := SUBSTR(p_string, v_start, v_end - v_start + 1);
+    v_substring := SUBSTR(v_input, v_start, v_end - v_start + 1);
     RETURN CAST(v_substring AS NUMBER);
 END ETDEP_SPLIT_PART
 ]]></body>
