@@ -4,7 +4,7 @@ import com.etendoerp.dependencymanager.util.UpdateLocalPackagesUtil;
 import com.smf.jobs.Action;
 import com.smf.jobs.ActionResult;
 import com.smf.jobs.Result;
-import org.apache.commons.lang.mutable.MutableBoolean;
+import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.codehaus.jettison.json.JSONObject;
 import org.openbravo.erpCommon.utility.OBMessageUtils;
 
