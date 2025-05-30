@@ -77,7 +77,7 @@ public class AddDependecyDS extends AbstractDependencyDS {
     return new DependencySelectedFilters();
   }
 
-  private static class DependencyResultComparator extends AbstractResultComparator {
+  protected static class DependencyResultComparator extends AbstractResultComparator {
     /**
      * Constructor that initializes the comparator with the field by which to sort the results.
      *
@@ -89,7 +89,7 @@ public class AddDependecyDS extends AbstractDependencyDS {
     }
   }
 
-  private static class DependencySelectedFilters extends AbstractSelectedFilters {
+  protected static class DependencySelectedFilters extends AbstractSelectedFilters {
     /**
      * Default constructor for DependencySelectedFilters.
      */
