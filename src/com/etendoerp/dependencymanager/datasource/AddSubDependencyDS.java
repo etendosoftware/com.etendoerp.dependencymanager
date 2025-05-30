@@ -135,7 +135,7 @@ public class AddSubDependencyDS extends AbstractDependencyDS {
     }
   }
 
-  private static class SubDependencyResultComparator extends AbstractResultComparator {
+  protected static class SubDependencyResultComparator extends AbstractResultComparator {
     /**
      * Constructor that initializes the comparator with the field by which to sort.
      *
@@ -148,7 +148,7 @@ public class AddSubDependencyDS extends AbstractDependencyDS {
     }
   }
 
-  private static class SubDependencySelectedFilters extends AbstractSelectedFilters {
+  protected static class SubDependencySelectedFilters extends AbstractSelectedFilters {
     private List<String> parent;
 
     /**
