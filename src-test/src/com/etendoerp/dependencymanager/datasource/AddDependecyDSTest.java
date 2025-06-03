@@ -23,6 +23,7 @@ import com.etendoerp.dependencymanager.data.PackageVersion;
 import com.etendoerp.dependencymanager.util.DependencyManagerConstants;
 import com.etendoerp.dependencymanager.util.DependencyTreeBuilder;
 
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.COMPARATOR_NOT_NULL_MESSAGE;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -287,7 +288,7 @@ class AddDependecyDSTest {
       Object comparator = addDependecyDS.createResultComparator(sortField);
 
       assertAll("Comparator creation",
-          () -> assertNotNull(comparator, "Comparator should not be null"),
+          () -> assertNotNull(comparator, COMPARATOR_NOT_NULL_MESSAGE),
           () -> assertInstanceOf(AddDependecyDS.DependencyResultComparator.class, comparator,
               "Should be instance of DependencyResultComparator")
       );
@@ -304,7 +305,7 @@ class AddDependecyDSTest {
       Object comparator = addDependecyDS.createResultComparator(sortField);
 
       assertAll("Descending comparator creation",
-          () -> assertNotNull(comparator, "Comparator should not be null"),
+          () -> assertNotNull(comparator, COMPARATOR_NOT_NULL_MESSAGE),
           () -> assertInstanceOf(AddDependecyDS.DependencyResultComparator.class, comparator,
               "Should be instance of DependencyResultComparator")
       );
@@ -367,9 +368,7 @@ class AddDependecyDSTest {
 
       Map<String, String> parameters = new HashMap<>();
 
-      assertThrows(RuntimeException.class, () -> {
-        addDependecyDS.getGridData(parameters, mockPackageVersion);
-      }, "Should propagate exception from dependency tree creation");
+      assertThrows(RuntimeException.class, () -> addDependecyDS.getGridData(parameters, mockPackageVersion), "Should propagate exception from dependency tree creation");
     }
 
     /**
@@ -390,9 +389,7 @@ class AddDependecyDSTest {
 
       Map<String, String> parameters = new HashMap<>();
 
-      assertThrows(RuntimeException.class, () -> {
-        addDependecyDS.getGridData(parameters, mockPackageVersion);
-      }, "Should propagate exception from core dependency removal");
+      assertThrows(RuntimeException.class, () -> addDependecyDS.getGridData(parameters, mockPackageVersion), "Should propagate exception from core dependency removal");
     }
   }
 
@@ -412,7 +409,7 @@ class AddDependecyDSTest {
           new AddDependecyDS.DependencyResultComparator(sortField);
 
       assertAll("DependencyResultComparator inheritance",
-          () -> assertNotNull(comparator, "Comparator should not be null")
+          () -> assertNotNull(comparator, COMPARATOR_NOT_NULL_MESSAGE)
       );
     }
 

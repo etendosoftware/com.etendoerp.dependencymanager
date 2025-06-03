@@ -1,5 +1,8 @@
 package com.etendoerp.dependencymanager.defaults;
 
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.EXPECTED_FORMATS;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.INVALID_JSON_CONTENT;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.VALID_JSON_CONTENT;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -12,7 +15,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,9 +56,7 @@ class ChangeFormatDefaultsTest {
   private MockedStatic<ChangeFormatUtil> mockedStaticChangeFormatUtil;
 
   private Map<String, Object> testParameters;
-  private static final String VALID_JSON_CONTENT = "{\"currentFormat\":\"DD/MM/YYYY\"}";
-  private static final String INVALID_JSON_CONTENT = "{invalid json}";
-  private static final List<String> EXPECTED_FORMATS = Arrays.asList("MM/DD/YYYY", "YYYY-MM-DD", "DD-MM-YYYY");
+
 
   /**
    * Sets up the test environment before each test.
@@ -122,7 +122,7 @@ class ChangeFormatDefaultsTest {
    */
   @Test
   @DisplayName("Should handle empty format list gracefully")
-  void testExecute_EmptyFormatList_ReturnsEmptyArray() {
+  void testExecuteEmptyFormatListReturnsEmptyArray() {
     List<String> emptyFormats = List.of();
     mockedStaticChangeFormatUtil.when(() ->
         ChangeFormatUtil.getNewFormatList(anyString(), anyString(), any(), any())

@@ -1,5 +1,8 @@
 package com.etendoerp.dependencymanager.actions;
 
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.PACKAGES_UPDATED_SUCCESSFULLY;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.PACKAGE_UPDATE_SUCCESS_CODE;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.RESULT_NOT_NULL_MESSAGE;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -80,18 +83,18 @@ class UpdateLocalPackagesActionTest {
   @Test
   @DisplayName("Should return SUCCESS when package update completes successfully")
   void testActionSuccessfulUpdate() {
-    String expectedSuccessMessage = "Packages updated successfully";
+    String expectedSuccessMessage = PACKAGES_UPDATED_SUCCESSFULLY;
 
     mockedUpdateUtil.when(UpdateLocalPackagesUtil::update)
         .then(invocation -> null); // void method returns null
 
-    mockedMessageUtils.when(() -> OBMessageUtils.messageBD("ETDEP_Package_Update_Success"))
+    mockedMessageUtils.when(() -> OBMessageUtils.messageBD(PACKAGE_UPDATE_SUCCESS_CODE))
         .thenReturn(expectedSuccessMessage);
 
     ActionResult result = updateLocalPackagesAction.action(testParameters, testIsStopped);
 
     assertAll("Successful update result validation",
-        () -> assertNotNull(result, "Result should not be null"),
+        () -> assertNotNull(result, RESULT_NOT_NULL_MESSAGE),
         () -> assertEquals(Result.Type.SUCCESS, result.getType(),
             "Result type should be SUCCESS"),
         () -> assertEquals(expectedSuccessMessage, result.getMessage(),
@@ -99,7 +102,7 @@ class UpdateLocalPackagesActionTest {
     );
 
     mockedUpdateUtil.verify(UpdateLocalPackagesUtil::update, times(1));
-    mockedMessageUtils.verify(() -> OBMessageUtils.messageBD("ETDEP_Package_Update_Success"),
+    mockedMessageUtils.verify(() -> OBMessageUtils.messageBD(PACKAGE_UPDATE_SUCCESS_CODE),
         times(1));
   }
 
@@ -119,7 +122,7 @@ class UpdateLocalPackagesActionTest {
     ActionResult result = updateLocalPackagesAction.action(testParameters, testIsStopped);
 
     assertAll("Runtime exception handling validation",
-        () -> assertNotNull(result, "Result should not be null"),
+        () -> assertNotNull(result, RESULT_NOT_NULL_MESSAGE),
         () -> assertEquals(Result.Type.ERROR, result.getType(),
             "Result type should be ERROR"),
         () -> assertEquals(expectedErrorMessage, result.getMessage(),
@@ -127,7 +130,7 @@ class UpdateLocalPackagesActionTest {
     );
 
     mockedUpdateUtil.verify(UpdateLocalPackagesUtil::update, times(1));
-    mockedMessageUtils.verify(() -> OBMessageUtils.messageBD("ETDEP_Package_Update_Success"),
+    mockedMessageUtils.verify(() -> OBMessageUtils.messageBD(PACKAGE_UPDATE_SUCCESS_CODE),
         never());
   }
 
@@ -150,18 +153,18 @@ class UpdateLocalPackagesActionTest {
   @Test
   @DisplayName("Should handle null parameters without throwing exception")
   void testActionNullParametersHandling() {
-    String expectedSuccessMessage = "Packages updated successfully";
+    String expectedSuccessMessage = PACKAGES_UPDATED_SUCCESSFULLY;
 
     mockedUpdateUtil.when(UpdateLocalPackagesUtil::update)
         .then(invocation -> null);
 
-    mockedMessageUtils.when(() -> OBMessageUtils.messageBD("ETDEP_Package_Update_Success"))
+    mockedMessageUtils.when(() -> OBMessageUtils.messageBD(PACKAGE_UPDATE_SUCCESS_CODE))
         .thenReturn(expectedSuccessMessage);
 
     ActionResult result = updateLocalPackagesAction.action(null, testIsStopped);
 
     assertAll("Null parameters handling validation",
-        () -> assertNotNull(result, "Result should not be null"),
+        () -> assertNotNull(result, RESULT_NOT_NULL_MESSAGE),
         () -> assertEquals(Result.Type.SUCCESS, result.getType(),
             "Result type should be SUCCESS even with null parameters"),
         () -> assertEquals(expectedSuccessMessage, result.getMessage(),
@@ -176,18 +179,18 @@ class UpdateLocalPackagesActionTest {
   @Test
   @DisplayName("Should handle null isStopped parameter without throwing exception")
   void testActionNullIsStoppedHandling() {
-    String expectedSuccessMessage = "Packages updated successfully";
+    String expectedSuccessMessage = PACKAGES_UPDATED_SUCCESSFULLY;
 
     mockedUpdateUtil.when(UpdateLocalPackagesUtil::update)
         .then(invocation -> null);
 
-    mockedMessageUtils.when(() -> OBMessageUtils.messageBD("ETDEP_Package_Update_Success"))
+    mockedMessageUtils.when(() -> OBMessageUtils.messageBD(PACKAGE_UPDATE_SUCCESS_CODE))
         .thenReturn(expectedSuccessMessage);
 
     ActionResult result = updateLocalPackagesAction.action(testParameters, null);
 
     assertAll("Null isStopped handling validation",
-        () -> assertNotNull(result, "Result should not be null"),
+        () -> assertNotNull(result, RESULT_NOT_NULL_MESSAGE),
         () -> assertEquals(Result.Type.SUCCESS, result.getType(),
             "Result type should be SUCCESS even with null isStopped"),
         () -> assertEquals(expectedSuccessMessage, result.getMessage(),

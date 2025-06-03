@@ -1,5 +1,10 @@
 package com.etendoerp.dependencymanager.datasource;
 
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.NEW_VERSION;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.TEST_ARTIFACT;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.TEST_GROUP;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.TEST_PACKAGE_VERSION;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.VERSION_1_5;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -68,21 +73,14 @@ class PackageUtilTest {
 
   private OBDal mockOBDal;
   private OBCriteria<PackageVersion> mockPackageVersionCriteria;
-  private OBCriteria<Dependency> mockDependencyCriteria;
   private OBQuery<PackageVersion> mockPackageVersionQuery;
   private OBQuery<Package> mockPackageQuery;
   private OBQuery<Dependency> mockDependencyQuery;
   private Package mockPackage;
   private PackageVersion mockPackageVersion;
-  private PackageDependency mockCoreDependency;
-  private Module mockCoreModule;
   private Dependency mockDependency;
 
   private MockedStatic<OBDal> mockedOBDal;
-
-  private static final String TEST_PACKAGE_VERSION = "2.1.0";
-  private static final String TEST_GROUP = "com.etendo";
-  private static final String TEST_ARTIFACT = "test-package";
 
   /**
    * Sets up the mock objects and test environment before each test.
@@ -91,14 +89,11 @@ class PackageUtilTest {
   void setUp() {
     mockOBDal = mock(OBDal.class);
     mockPackageVersionCriteria = mock(OBCriteria.class);
-    mockDependencyCriteria = mock(OBCriteria.class);
     mockPackageVersionQuery = mock(OBQuery.class);
     mockPackageQuery = mock(OBQuery.class);
     mockDependencyQuery = mock(OBQuery.class);
     mockPackage = mock(Package.class);
     mockPackageVersion = mock(PackageVersion.class);
-    mockCoreDependency = mock(PackageDependency.class);
-    mockCoreModule = mock(Module.class);
     mockDependency = mock(Dependency.class);
 
     mockedOBDal = mockStatic(OBDal.class);
@@ -156,7 +151,7 @@ class PackageUtilTest {
     @DisplayName("Should handle malformed version ranges")
     void testIsCompatibleMalformedRange() {
       String malformedRange = "1.0.0-2.0.0";
-      String version = "1.5.0";
+      String version = VERSION_1_5;
 
       boolean result = PackageUtil.isCompatible(malformedRange, version);
 
@@ -315,7 +310,7 @@ class PackageUtilTest {
       assertAll("Version range split",
           () -> assertEquals(2, result.length),
           () -> assertEquals("1.0.0", result[0].trim()),
-          () -> assertEquals("2.0.0", result[1].trim())
+          () -> assertEquals(NEW_VERSION, result[1].trim())
       );
     }
 
@@ -337,8 +332,8 @@ class PackageUtilTest {
       PackageVersion compatibleVersion = mock(PackageVersion.class);
       PackageVersion latestVersion = mock(PackageVersion.class);
 
-      when(compatibleVersion.getVersion()).thenReturn("1.5.0");
-      when(latestVersion.getVersion()).thenReturn("2.0.0");
+      when(compatibleVersion.getVersion()).thenReturn(VERSION_1_5);
+      when(latestVersion.getVersion()).thenReturn(NEW_VERSION);
 
       setupPackageVersionCriteriaMock();
       when(mockPackageVersionCriteria.list()).thenReturn(Arrays.asList(latestVersion, compatibleVersion));
@@ -350,14 +345,14 @@ class PackageUtilTest {
         JSONObject compatibleResult = new JSONObject();
         compatibleResult.put(PackageUtil.IS_COMPATIBLE, true);
 
-        mockedPackageUtil.when(() -> PackageUtil.checkCoreCompatibility(mockPackage, "2.0.0"))
+        mockedPackageUtil.when(() -> PackageUtil.checkCoreCompatibility(mockPackage, NEW_VERSION))
             .thenReturn(incompatibleResult);
-        mockedPackageUtil.when(() -> PackageUtil.checkCoreCompatibility(mockPackage, "1.5.0"))
+        mockedPackageUtil.when(() -> PackageUtil.checkCoreCompatibility(mockPackage, VERSION_1_5))
             .thenReturn(compatibleResult);
 
         String result = PackageUtil.getCoreCompatibleOrLatestVersion(mockPackage);
 
-        assertEquals("1.5.0", result);
+        assertEquals(VERSION_1_5, result);
       }
     }
 
@@ -368,7 +363,7 @@ class PackageUtilTest {
     @DisplayName("Should return latest version when no compatible version found")
     void testGetCoreCompatibleOrLatestVersionNoCompatible() throws JSONException {
       PackageVersion latestVersion = mock(PackageVersion.class);
-      when(latestVersion.getVersion()).thenReturn("2.0.0");
+      when(latestVersion.getVersion()).thenReturn(NEW_VERSION);
 
       setupPackageVersionCriteriaMock();
       when(mockPackageVersionCriteria.list()).thenReturn(Collections.singletonList(latestVersion));
@@ -377,12 +372,12 @@ class PackageUtilTest {
         JSONObject incompatibleResult = new JSONObject();
         incompatibleResult.put(PackageUtil.IS_COMPATIBLE, false);
 
-        mockedPackageUtil.when(() -> PackageUtil.checkCoreCompatibility(mockPackage, "2.0.0"))
+        mockedPackageUtil.when(() -> PackageUtil.checkCoreCompatibility(mockPackage, NEW_VERSION))
             .thenReturn(incompatibleResult);
 
         String result = PackageUtil.getCoreCompatibleOrLatestVersion(mockPackage);
 
-        assertEquals("2.0.0", result);
+        assertEquals(NEW_VERSION, result);
       }
     }
 
@@ -393,7 +388,7 @@ class PackageUtilTest {
     @DisplayName("Should handle JSON exception")
     void testGetCoreCompatibleOrLatestVersionJSONException() {
       PackageVersion latestVersion = mock(PackageVersion.class);
-      when(latestVersion.getVersion()).thenReturn("2.0.0");
+      when(latestVersion.getVersion()).thenReturn(NEW_VERSION);
 
       setupPackageVersionCriteriaMock();
       when(mockPackageVersionCriteria.list()).thenReturn(Collections.singletonList(latestVersion));
@@ -401,7 +396,7 @@ class PackageUtilTest {
       try (MockedStatic<PackageUtil> mockedPackageUtil = mockStatic(PackageUtil.class, CALLS_REAL_METHODS)) {
         JSONObject malformedResult = new JSONObject();
 
-        mockedPackageUtil.when(() -> PackageUtil.checkCoreCompatibility(mockPackage, "2.0.0"))
+        mockedPackageUtil.when(() -> PackageUtil.checkCoreCompatibility(mockPackage, NEW_VERSION))
             .thenReturn(malformedResult);
 
         assertThrows(OBException.class,

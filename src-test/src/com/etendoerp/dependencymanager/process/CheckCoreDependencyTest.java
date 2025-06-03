@@ -1,5 +1,14 @@
 package com.etendoerp.dependencymanager.process;
 
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.COMPATIBLE;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.CORE_VERSION;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.CORE_VERSION_23_4_0;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.MINIMUM_VERSION;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.REASON;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.RESULT_NOT_NULL_MESSAGE;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.SHOULD_CONTAIN_COMPATIBLE_FIELD;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.SHOULD_CONTAIN_ORIGINAL_CAUSE;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.SHOULD_THROW_OB_EXCEPTION;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -99,8 +108,8 @@ class CheckCoreDependencyTest {
     String jsonData = createValidJsonData();
 
     JSONObject expectedResult = new JSONObject();
-    expectedResult.put("compatible", true);
-    expectedResult.put("coreVersion", "23.4.0");
+    expectedResult.put(COMPATIBLE, true);
+    expectedResult.put(CORE_VERSION, CORE_VERSION_23_4_0);
 
     when(mockOBDal.get(PackageVersion.class, VALID_PACKAGE_VERSION_ID))
         .thenReturn(mockPackageVersion);
@@ -113,11 +122,11 @@ class CheckCoreDependencyTest {
     JSONObject result = checkCoreDependency.execute(parameters, jsonData);
 
     assertAll("Successful result verification",
-        () -> assertNotNull(result, "Result should not be null"),
-        () -> assertTrue(result.has("compatible"), "Should contain 'compatible' field"),
-        () -> assertTrue(result.getBoolean("compatible"), "Should be compatible"),
-        () -> assertTrue(result.has("coreVersion"), "Should contain 'coreVersion' field"),
-        () -> assertEquals("23.4.0", result.getString("coreVersion"), "Incorrect core version")
+        () -> assertNotNull(result, RESULT_NOT_NULL_MESSAGE),
+        () -> assertTrue(result.has(COMPATIBLE), SHOULD_CONTAIN_COMPATIBLE_FIELD),
+        () -> assertTrue(result.getBoolean(COMPATIBLE), "Should be compatible"),
+        () -> assertTrue(result.has(CORE_VERSION), "Should contain 'coreVersion' field"),
+        () -> assertEquals(CORE_VERSION_23_4_0, result.getString(CORE_VERSION), "Incorrect core version")
     );
 
     verify(mockOBDal).get(PackageVersion.class, VALID_PACKAGE_VERSION_ID);
@@ -141,7 +150,7 @@ class CheckCoreDependencyTest {
     JSONObject result = checkCoreDependency.execute(parameters, jsonData);
 
     assertAll("Verification when PackageVersion doesn't exist",
-        () -> assertNotNull(result, "Result should not be null"),
+        () -> assertNotNull(result, RESULT_NOT_NULL_MESSAGE),
         () -> assertEquals(0, result.length(), "Result should be empty")
     );
 
@@ -162,8 +171,8 @@ class CheckCoreDependencyTest {
         () -> checkCoreDependency.execute(parameters, invalidJsonData));
 
     assertAll("Invalid JSON exception verification",
-        () -> assertNotNull(exception, "Should throw OBException"),
-        () -> assertNotNull(exception.getCause(), "Should contain original cause"),
+        () -> assertNotNull(exception, SHOULD_THROW_OB_EXCEPTION),
+        () -> assertNotNull(exception.getCause(), SHOULD_CONTAIN_ORIGINAL_CAUSE),
         () -> assertInstanceOf(JSONException.class, exception.getCause(), "Cause should be JSONException")
     );
   }
@@ -181,8 +190,8 @@ class CheckCoreDependencyTest {
         () -> checkCoreDependency.execute(parameters, jsonDataWithoutId));
 
     assertAll("Missing field exception verification",
-        () -> assertNotNull(exception, "Should throw OBException"),
-        () -> assertNotNull(exception.getCause(), "Should contain original cause"),
+        () -> assertNotNull(exception, SHOULD_THROW_OB_EXCEPTION),
+        () -> assertNotNull(exception.getCause(), SHOULD_CONTAIN_ORIGINAL_CAUSE),
         () -> assertInstanceOf(JSONException.class, exception.getCause(), "Cause should be JSONException")
     );
   }
@@ -203,8 +212,8 @@ class CheckCoreDependencyTest {
         () -> checkCoreDependency.execute(parameters, jsonData));
 
     assertAll("Persistence layer exception verification",
-        () -> assertNotNull(exception, "Should throw OBException"),
-        () -> assertNotNull(exception.getCause(), "Should contain original cause"),
+        () -> assertNotNull(exception, SHOULD_THROW_OB_EXCEPTION),
+        () -> assertNotNull(exception.getCause(), SHOULD_CONTAIN_ORIGINAL_CAUSE),
         () -> assertInstanceOf(RuntimeException.class, exception.getCause(), "Cause should be RuntimeException"),
         () -> assertEquals("Database connection error", exception.getCause().getMessage(),
             "Incorrect error message")
@@ -232,8 +241,8 @@ class CheckCoreDependencyTest {
         () -> checkCoreDependency.execute(parameters, jsonData));
 
     assertAll("PackageUtil exception verification",
-        () -> assertNotNull(exception, "Should throw OBException"),
-        () -> assertNotNull(exception.getCause(), "Should contain original cause"),
+        () -> assertNotNull(exception, SHOULD_THROW_OB_EXCEPTION),
+        () -> assertNotNull(exception.getCause(), SHOULD_CONTAIN_ORIGINAL_CAUSE),
         () -> assertEquals("Core compatibility check failed", exception.getCause().getMessage(),
             "Incorrect error message")
     );
@@ -254,7 +263,7 @@ class CheckCoreDependencyTest {
         () -> checkCoreDependency.execute(parameters, jsonDataWithEmptyId));
 
     assertAll("Empty packageVersionId verification",
-        () -> assertNotNull(result, "Result should not be null"),
+        () -> assertNotNull(result, RESULT_NOT_NULL_MESSAGE),
         () -> assertEquals(0, result.length(), "Result should be empty")
     );
   }
@@ -272,8 +281,8 @@ class CheckCoreDependencyTest {
     );
 
     JSONObject expectedResult = new JSONObject();
-    expectedResult.put("compatible", false);
-    expectedResult.put("reason", "Version mismatch");
+    expectedResult.put(COMPATIBLE, false);
+    expectedResult.put(REASON, "Version mismatch");
 
     when(mockOBDal.get(PackageVersion.class, VALID_PACKAGE_VERSION_ID))
         .thenReturn(mockPackageVersion);
@@ -286,11 +295,11 @@ class CheckCoreDependencyTest {
     JSONObject result = checkCoreDependency.execute(parameters, jsonDataWithExtraFields);
 
     assertAll("Additional fields verification",
-        () -> assertNotNull(result, "Result should not be null"),
-        () -> assertTrue(result.has("compatible"), "Should contain 'compatible' field"),
-        () -> assertFalse(result.getBoolean("compatible"), "Should be incompatible"),
-        () -> assertTrue(result.has("reason"), "Should contain 'reason' field"),
-        () -> assertEquals("Version mismatch", result.getString("reason"))
+        () -> assertNotNull(result, RESULT_NOT_NULL_MESSAGE),
+        () -> assertTrue(result.has(COMPATIBLE), SHOULD_CONTAIN_COMPATIBLE_FIELD),
+        () -> assertFalse(result.getBoolean(COMPATIBLE), "Should be incompatible"),
+        () -> assertTrue(result.has(REASON), "Should contain 'reason' field"),
+        () -> assertEquals("Version mismatch", result.getString(REASON))
     );
   }
 
@@ -311,9 +320,9 @@ class CheckCoreDependencyTest {
     String jsonData = createValidJsonData();
 
     JSONObject expectedResult = new JSONObject();
-    expectedResult.put("compatible", true);
-    expectedResult.put("coreVersion", "23.4.0");
-    expectedResult.put("minimumVersion", "23.2.0");
+    expectedResult.put(COMPATIBLE, true);
+    expectedResult.put(CORE_VERSION, CORE_VERSION_23_4_0);
+    expectedResult.put(MINIMUM_VERSION, "23.2.0");
     expectedResult.put("warnings", new String[]{ "Deprecated API usage detected" });
 
     setupMocksForSuccessfulExecution();
@@ -323,13 +332,13 @@ class CheckCoreDependencyTest {
     JSONObject result = checkCoreDependency.execute(parameters, jsonData);
 
     assertAll("Complex result verification",
-        () -> assertNotNull(result, "Result should not be null"),
-        () -> assertTrue(result.has("compatible"), "Should contain 'compatible' field"),
-        () -> assertTrue(result.getBoolean("compatible"), "Should be compatible"),
-        () -> assertTrue(result.has("coreVersion"), "Should contain 'coreVersion' field"),
-        () -> assertEquals("23.4.0", result.getString("coreVersion")),
-        () -> assertTrue(result.has("minimumVersion"), "Should contain 'minimumVersion' field"),
-        () -> assertEquals("23.2.0", result.getString("minimumVersion")),
+        () -> assertNotNull(result, RESULT_NOT_NULL_MESSAGE),
+        () -> assertTrue(result.has(COMPATIBLE), SHOULD_CONTAIN_COMPATIBLE_FIELD),
+        () -> assertTrue(result.getBoolean(COMPATIBLE), "Should be compatible"),
+        () -> assertTrue(result.has(CORE_VERSION), "Should contain 'coreVersion' field"),
+        () -> assertEquals(CORE_VERSION_23_4_0, result.getString(CORE_VERSION)),
+        () -> assertTrue(result.has(MINIMUM_VERSION), "Should contain 'minimumVersion' field"),
+        () -> assertEquals("23.2.0", result.getString(MINIMUM_VERSION)),
         () -> assertTrue(result.has("warnings"), "Should contain 'warnings' field")
     );
   }

@@ -1,5 +1,6 @@
 package com.etendoerp.dependencymanager.actions;
 
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.VERSION;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -116,13 +117,13 @@ class InstallDependencyTest {
   @Test
   @DisplayName("Should determine version status correctly")
   void testDetermineVersionStatusCompareVersions() {
-    String result1 = InstallDependency.determineVersionStatus("1.0.0", "1.0.0");
+    String result1 = InstallDependency.determineVersionStatus(VERSION, VERSION);
     assertEquals("U", result1, "Same versions should return 'U' (Updated)");
 
-    String result2 = InstallDependency.determineVersionStatus("1.0.0", "1.1.0");
+    String result2 = InstallDependency.determineVersionStatus(VERSION, "1.1.0");
     assertEquals("UA", result2, "Different versions should return 'UA' (Update Available)");
 
-    String result3 = InstallDependency.determineVersionStatus("1.0.0", null);
+    String result3 = InstallDependency.determineVersionStatus(VERSION, null);
     assertEquals("UA", result3, "Null latest version should return 'UA'");
   }
 
@@ -197,7 +198,7 @@ class InstallDependencyTest {
    */
   @Test
   @DisplayName("Should handle HTTP client exceptions gracefully")
-  void testFetchLatestVersion_HttpException() {
+  void testFetchLatestVersionHttpException() {
     String group = "com.test";
     String artifact = "test-artifact";
 

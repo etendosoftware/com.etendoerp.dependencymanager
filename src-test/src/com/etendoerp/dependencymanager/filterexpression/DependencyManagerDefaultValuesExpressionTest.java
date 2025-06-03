@@ -17,6 +17,12 @@ import org.openbravo.base.exception.OBException;
 
 import com.etendoerp.dependencymanager.util.DependencyUtil;
 
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.CONTEXT;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.CURRENT_PARAM;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.INPUT_FORMAT;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.IS_EXTERNAL_DEPENDENCY;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.NEW_FORMAT;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.VERSION_DISPLAY_LOGIC;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -46,7 +52,7 @@ class DependencyManagerDefaultValuesExpressionTest {
   }
 
   /**
-   * Tests the logic for the "newFormat" parameter, including switching between JAR and SOURCE formats,
+   * Tests the logic for the NEW_FORMAT parameter, including switching between JAR and SOURCE formats,
    * and handling unknown or local formats.
    */
   @Nested
@@ -64,10 +70,10 @@ class DependencyManagerDefaultValuesExpressionTest {
     @DisplayName("Should return JAR format when current format is SOURCE")
     void shouldReturnJarWhenFormatIsSource() throws Exception {
       JSONObject context = new JSONObject();
-      context.put("inpformat", DependencyUtil.FORMAT_SOURCE);
+      context.put(INPUT_FORMAT, DependencyUtil.FORMAT_SOURCE);
 
-      requestMap.put("currentParam", "newFormat");
-      requestMap.put("context", context.toString());
+      requestMap.put(CURRENT_PARAM, NEW_FORMAT);
+      requestMap.put(CONTEXT, context.toString());
 
       String result = filterExpression.getExpression(requestMap);
 
@@ -86,10 +92,10 @@ class DependencyManagerDefaultValuesExpressionTest {
     @DisplayName("Should return SOURCE format when current format is JAR")
     void shouldReturnSourceWhenFormatIsJar() throws Exception {
       JSONObject context = new JSONObject();
-      context.put("inpformat", DependencyUtil.FORMAT_JAR);
+      context.put(INPUT_FORMAT, DependencyUtil.FORMAT_JAR);
 
-      requestMap.put("currentParam", "newFormat");
-      requestMap.put("context", context.toString());
+      requestMap.put(CURRENT_PARAM, NEW_FORMAT);
+      requestMap.put(CONTEXT, context.toString());
 
       String result = filterExpression.getExpression(requestMap);
 
@@ -111,10 +117,10 @@ class DependencyManagerDefaultValuesExpressionTest {
     @DisplayName("Should return null for LOCAL format and unknown formats")
     void shouldReturnNullForLocalAndUnknownFormats(String format) throws Exception {
       JSONObject context = new JSONObject();
-      context.put("inpformat", format);
+      context.put(INPUT_FORMAT, format);
 
-      requestMap.put("currentParam", "newFormat");
-      requestMap.put("context", context.toString());
+      requestMap.put(CURRENT_PARAM, NEW_FORMAT);
+      requestMap.put(CONTEXT, context.toString());
 
       String result = filterExpression.getExpression(requestMap);
 
@@ -144,8 +150,8 @@ class DependencyManagerDefaultValuesExpressionTest {
       JSONObject context = new JSONObject();
       context.put("inpversion", expectedVersion);
 
-      requestMap.put("currentParam", "externalVersion");
-      requestMap.put("context", context.toString());
+      requestMap.put(CURRENT_PARAM, "externalVersion");
+      requestMap.put(CONTEXT, context.toString());
 
       String result = filterExpression.getExpression(requestMap);
 
@@ -174,10 +180,10 @@ class DependencyManagerDefaultValuesExpressionTest {
     @DisplayName("Should return Y when external dependency is N")
     void shouldReturnYWhenExternalDependencyIsN() throws Exception {
       JSONObject context = new JSONObject();
-      context.put("inpisexternaldependency", "N");
+      context.put(IS_EXTERNAL_DEPENDENCY, "N");
 
-      requestMap.put("currentParam", "version_display_logic");
-      requestMap.put("context", context.toString());
+      requestMap.put(CURRENT_PARAM, VERSION_DISPLAY_LOGIC);
+      requestMap.put(CONTEXT, context.toString());
 
       String result = filterExpression.getExpression(requestMap);
 
@@ -199,10 +205,10 @@ class DependencyManagerDefaultValuesExpressionTest {
     @DisplayName("Should return N when external dependency is not N")
     void shouldReturnNWhenExternalDependencyIsNotN(String value) throws Exception {
       JSONObject context = new JSONObject();
-      context.put("inpisexternaldependency", value);
+      context.put(IS_EXTERNAL_DEPENDENCY, value);
 
-      requestMap.put("currentParam", "version_display_logic");
-      requestMap.put("context", context.toString());
+      requestMap.put(CURRENT_PARAM, VERSION_DISPLAY_LOGIC);
+      requestMap.put(CONTEXT, context.toString());
 
       String result = filterExpression.getExpression(requestMap);
 
@@ -224,12 +230,10 @@ class DependencyManagerDefaultValuesExpressionTest {
     @Test
     @DisplayName("Should throw OBException when context JSON is invalid")
     void shouldThrowOBExceptionWhenContextJsonIsInvalid() {
-      requestMap.put("currentParam", "newFormat");
-      requestMap.put("context", "invalid-json-string");
+      requestMap.put(CURRENT_PARAM, NEW_FORMAT);
+      requestMap.put(CONTEXT, "invalid-json-string");
 
-      OBException exception = assertThrows(OBException.class, () -> {
-        filterExpression.getExpression(requestMap);
-      }, "Should throw OBException when context JSON is invalid");
+      OBException exception = assertThrows(OBException.class, () -> filterExpression.getExpression(requestMap), "Should throw OBException when context JSON is invalid");
 
       assertNotNull(exception.getCause(), "Exception should have a cause");
       assertInstanceOf(JSONException.class, exception.getCause(), "Exception cause should be JSONException");
@@ -245,10 +249,10 @@ class DependencyManagerDefaultValuesExpressionTest {
     @DisplayName("Should return null when currentParam is unknown")
     void shouldReturnNullWhenCurrentParamIsUnknown() throws Exception {
       JSONObject context = new JSONObject();
-      context.put("inpformat", DependencyUtil.FORMAT_SOURCE);
+      context.put(INPUT_FORMAT, DependencyUtil.FORMAT_SOURCE);
 
-      requestMap.put("currentParam", "unknownParameter");
-      requestMap.put("context", context.toString());
+      requestMap.put(CURRENT_PARAM, "unknownParameter");
+      requestMap.put(CONTEXT, context.toString());
 
       String result = filterExpression.getExpression(requestMap);
 
@@ -277,10 +281,10 @@ class DependencyManagerDefaultValuesExpressionTest {
           () -> {
             // Test newFormat with SOURCE
             JSONObject context1 = new JSONObject();
-            context1.put("inpformat", DependencyUtil.FORMAT_SOURCE);
+            context1.put(INPUT_FORMAT, DependencyUtil.FORMAT_SOURCE);
             Map<String, String> map1 = new HashMap<>();
-            map1.put("currentParam", "newFormat");
-            map1.put("context", context1.toString());
+            map1.put(CURRENT_PARAM, NEW_FORMAT);
+            map1.put(CONTEXT, context1.toString());
             assertEquals(DependencyUtil.FORMAT_JAR,
                 filterExpression.getExpression(map1));
           },
@@ -289,17 +293,17 @@ class DependencyManagerDefaultValuesExpressionTest {
             JSONObject context2 = new JSONObject();
             context2.put("inpversion", "2.0.0");
             Map<String, String> map2 = new HashMap<>();
-            map2.put("currentParam", "externalVersion");
-            map2.put("context", context2.toString());
+            map2.put(CURRENT_PARAM, "externalVersion");
+            map2.put(CONTEXT, context2.toString());
             assertEquals("2.0.0", filterExpression.getExpression(map2));
           },
           () -> {
             // Test version_display_logic
             JSONObject context3 = new JSONObject();
-            context3.put("inpisexternaldependency", "N");
+            context3.put(IS_EXTERNAL_DEPENDENCY, "N");
             Map<String, String> map3 = new HashMap<>();
-            map3.put("currentParam", "version_display_logic");
-            map3.put("context", context3.toString());
+            map3.put(CURRENT_PARAM, VERSION_DISPLAY_LOGIC);
+            map3.put(CONTEXT, context3.toString());
             assertEquals("Y", filterExpression.getExpression(map3));
           }
       );

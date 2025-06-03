@@ -149,9 +149,7 @@ class DependencyTreeBuilderUnitTest {
     when(jsonArray.length()).thenReturn(1);
     when(jsonArray.getJSONObject(0)).thenThrow(new JSONException("Invalid JSON"));
 
-    assertThrows(JSONException.class, () -> {
-      DependencyTreeBuilder.addDependenciesFromParams(jsonArray);
-    }, "Should throw JSONException for invalid JSON");
+    assertThrows(JSONException.class, () -> DependencyTreeBuilder.addDependenciesFromParams(jsonArray), "Should throw JSONException for invalid JSON");
   }
 
   /**
@@ -231,7 +229,7 @@ class DependencyTreeBuilderUnitTest {
    */
   @Test
   @DisplayName("searchSubDependency - Should handle null getDependencyVersion gracefully")
-  void testSearchSubDependency_NullDependencyVersion() {
+  void testSearchSubDependencyNullDependencyVersion() {
     when(mockDependency.isExternalDependency()).thenReturn(false);
     when(mockDependency.getDependencyVersion()).thenReturn(null);
     Map<String, String> parentMap = new HashMap<>();

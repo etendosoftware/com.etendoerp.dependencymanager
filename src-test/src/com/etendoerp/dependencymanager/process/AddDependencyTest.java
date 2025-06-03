@@ -27,6 +27,20 @@ import com.etendoerp.dependencymanager.util.DependencyTreeBuilder;
 import com.etendoerp.dependencymanager.util.DependencyUtil;
 import com.etendoerp.dependencymanager.util.PackageUtil;
 
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.ARTIFACT;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.ERROR;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.ERROR_MESSAGE;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.LATEST;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.MESSAGE;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.MESSAGE_TEXT;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.MESSAGE_TYPE;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.NEW_VERSION;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.PACKAGE_VERSION_ID_FIELD;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.PROCESS_DEPENDENCY;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.SHOW_MESSAGE_IN_PROCESS_VIEW;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.SUCCESS;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.TEST_PACKAGE;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.VERSION;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -101,7 +115,7 @@ class AddDependencyTest {
   @Test
   void testExecutePackageVersionNotFound() throws Exception {
     String packageVersionId = "non-existent-id";
-    jsonData.put("Etdep_Package_Version_ID", packageVersionId);
+    jsonData.put(PACKAGE_VERSION_ID_FIELD, packageVersionId);
 
     try (MockedStatic<OBDal> obDalStatic = mockStatic(OBDal.class)) {
       obDalStatic.when(OBDal::getInstance).thenReturn(obDal);
@@ -115,10 +129,10 @@ class AddDependencyTest {
       assertEquals(1, actions.length());
 
       JSONObject action = actions.getJSONObject(0);
-      assertTrue(action.has("showMsgInProcessView"));
-      JSONObject msgInfo = action.getJSONObject("showMsgInProcessView");
-      assertEquals("error", msgInfo.getString("msgType"));
-      assertEquals("Package version not found", msgInfo.getString("msgText"));
+      assertTrue(action.has(SHOW_MESSAGE_IN_PROCESS_VIEW));
+      JSONObject msgInfo = action.getJSONObject(SHOW_MESSAGE_IN_PROCESS_VIEW);
+      assertEquals(ERROR_MESSAGE, msgInfo.getString(MESSAGE_TYPE));
+      assertEquals("Package version not found", msgInfo.getString(MESSAGE_TEXT));
     }
   }
 
@@ -132,7 +146,7 @@ class AddDependencyTest {
   @Test
   void testExecuteBundlePackageWithoutGrid() throws Exception {
     String packageVersionId = "bundle-id";
-    jsonData.put("Etdep_Package_Version_ID", packageVersionId);
+    jsonData.put(PACKAGE_VERSION_ID_FIELD, packageVersionId);
     jsonData.put("_params", new JSONObject());
 
     try (MockedStatic<OBDal> obDalStatic = mockStatic(OBDal.class);
@@ -147,9 +161,9 @@ class AddDependencyTest {
       JSONObject result = addDependency.execute(parameters, jsonData.toString());
 
       assertNotNull(result);
-      assertTrue(result.has("message"));
-      JSONObject message = result.getJSONObject("message");
-      assertEquals("error", message.getString("severity"));
+      assertTrue(result.has(MESSAGE));
+      JSONObject message = result.getJSONObject(MESSAGE);
+      assertEquals(ERROR_MESSAGE, message.getString("severity"));
     }
   }
 
@@ -164,7 +178,7 @@ class AddDependencyTest {
   void testExecuteSuccessWithNonBundlePackage() throws Exception {
     // Given
     String packageVersionId = "test-id";
-    jsonData.put("Etdep_Package_Version_ID", packageVersionId);
+    jsonData.put(PACKAGE_VERSION_ID_FIELD, packageVersionId);
 
     List<PackageDependency> dependencies = new ArrayList<>();
     dependencies.add(mockPackageDependency);
@@ -185,9 +199,9 @@ class AddDependencyTest {
       treeBuilderStatic.when(() -> DependencyTreeBuilder.createDependencyTree(mockPackageVersion))
           .thenReturn(dependencies);
 
-      depUtilStatic.when(() -> DependencyUtil.getInstalledModule("com.test", "artifact"))
+      depUtilStatic.when(() -> DependencyUtil.getInstalledModule(TEST_PACKAGE, ARTIFACT))
           .thenReturn(null);
-      depUtilStatic.when(() -> DependencyUtil.getInstalledDependency("com.test", "artifact", false))
+      depUtilStatic.when(() -> DependencyUtil.getInstalledDependency(TEST_PACKAGE, ARTIFACT, false))
           .thenReturn(null);
 
       treeBuilderStatic.when(() -> DependencyTreeBuilder.isBundle(any(PackageDependency.class)))
@@ -195,7 +209,7 @@ class AddDependencyTest {
       pkgUtilStatic.when(() -> PackageUtil.getLastPackageVersion(any()))
           .thenReturn(mockPackageVersion);
       installDepStatic.when(() -> InstallDependency.determineVersionStatus(anyString(), anyString()))
-          .thenReturn("LATEST");
+          .thenReturn(LATEST);
 
       JSONObject result = addDependency.execute(parameters, jsonData.toString());
 
@@ -212,9 +226,9 @@ class AddDependencyTest {
    */
   @Test
   void testProcessDependencyNewDependency() throws Exception {
-    when(mockPackageDependency.getGroup()).thenReturn("com.test");
-    when(mockPackageDependency.getArtifact()).thenReturn("artifact");
-    when(mockPackageDependency.getVersion()).thenReturn("1.0.0");
+    when(mockPackageDependency.getGroup()).thenReturn(TEST_PACKAGE);
+    when(mockPackageDependency.getArtifact()).thenReturn(ARTIFACT);
+    when(mockPackageDependency.getVersion()).thenReturn(VERSION);
     when(mockPackageDependency.isExternalDependency()).thenReturn(false);
 
     try (MockedStatic<DependencyUtil> depUtilStatic = mockStatic(DependencyUtil.class);
@@ -223,9 +237,9 @@ class AddDependencyTest {
          MockedStatic<PackageUtil> pkgUtilStatic = mockStatic(PackageUtil.class);
          MockedStatic<InstallDependency> installDepStatic = mockStatic(InstallDependency.class)) {
 
-      depUtilStatic.when(() -> DependencyUtil.getInstalledModule("com.test", "artifact"))
+      depUtilStatic.when(() -> DependencyUtil.getInstalledModule(TEST_PACKAGE, ARTIFACT))
           .thenReturn(null);
-      depUtilStatic.when(() -> DependencyUtil.getInstalledDependency("com.test", "artifact", false))
+      depUtilStatic.when(() -> DependencyUtil.getInstalledDependency(TEST_PACKAGE, ARTIFACT, false))
           .thenReturn(null);
       obDalStatic.when(OBDal::getInstance).thenReturn(obDal);
 
@@ -233,16 +247,16 @@ class AddDependencyTest {
           .thenReturn(false);
       pkgUtilStatic.when(() -> PackageUtil.getLastPackageVersion(any()))
           .thenReturn(mockPackageVersion);
-      installDepStatic.when(() -> InstallDependency.determineVersionStatus("1.0.0", "1.0.0"))
-          .thenReturn("LATEST");
+      installDepStatic.when(() -> InstallDependency.determineVersionStatus(VERSION, VERSION))
+          .thenReturn(LATEST);
 
-      var method = AddDependency.class.getDeclaredMethod("processDependency",
+      var method = AddDependency.class.getDeclaredMethod(PROCESS_DEPENDENCY,
           PackageVersion.class, PackageDependency.class);
       method.setAccessible(true);
       JSONObject result = (JSONObject) method.invoke(addDependency, mockPackageVersion, mockPackageDependency);
 
       assertNotNull(result);
-      assertFalse(result.getBoolean("error"));
+      assertFalse(result.getBoolean(ERROR_MESSAGE));
       assertTrue(result.getBoolean("needFlush"));
       verify(obDal).save(any(Dependency.class));
     }
@@ -263,7 +277,7 @@ class AddDependencyTest {
     grid.put("_selection", new JSONArray());
     params.put("grid", grid);
 
-    jsonData.put("Etdep_Package_Version_ID", packageVersionId);
+    jsonData.put(PACKAGE_VERSION_ID_FIELD, packageVersionId);
     jsonData.put("_params", params);
 
     try (MockedStatic<OBDal> obDalStatic = mockStatic(OBDal.class);
@@ -286,7 +300,7 @@ class AddDependencyTest {
       pkgUtilStatic.when(() -> PackageUtil.getLastPackageVersion(any()))
           .thenReturn(mockPackageVersion);
       installDepStatic.when(() -> InstallDependency.determineVersionStatus(anyString(), anyString()))
-          .thenReturn("LATEST");
+          .thenReturn(LATEST);
 
       JSONObject result = addDependency.execute(parameters, jsonData.toString());
 
@@ -304,33 +318,33 @@ class AddDependencyTest {
    */
   @Test
   void testProcessDependencyExistingDependencyUpdate() throws Exception {
-    when(mockPackageDependency.getGroup()).thenReturn("com.test");
-    when(mockPackageDependency.getArtifact()).thenReturn("artifact");
-    when(mockPackageDependency.getVersion()).thenReturn("2.0.0");
+    when(mockPackageDependency.getGroup()).thenReturn(TEST_PACKAGE);
+    when(mockPackageDependency.getArtifact()).thenReturn(ARTIFACT);
+    when(mockPackageDependency.getVersion()).thenReturn(NEW_VERSION);
     when(mockPackageDependency.isExternalDependency()).thenReturn(false);
-    when(mockDependency.getVersion()).thenReturn("1.0.0");
+    when(mockDependency.getVersion()).thenReturn(VERSION);
 
     try (MockedStatic<DependencyUtil> depUtilStatic = mockStatic(DependencyUtil.class);
          MockedStatic<OBDal> obDalStatic = mockStatic(OBDal.class);
          MockedStatic<PackageUtil> pkgUtilStatic = mockStatic(PackageUtil.class)) {
 
-      depUtilStatic.when(() -> DependencyUtil.getInstalledModule("com.test", "artifact"))
+      depUtilStatic.when(() -> DependencyUtil.getInstalledModule(TEST_PACKAGE, ARTIFACT))
           .thenReturn(null);
-      depUtilStatic.when(() -> DependencyUtil.getInstalledDependency("com.test", "artifact", false))
+      depUtilStatic.when(() -> DependencyUtil.getInstalledDependency(TEST_PACKAGE, ARTIFACT, false))
           .thenReturn(mockDependency);
       obDalStatic.when(OBDal::getInstance).thenReturn(obDal);
       pkgUtilStatic.when(() -> PackageUtil.getLastPackageVersion(any()))
           .thenReturn(mockPackageVersion);
 
-      var method = AddDependency.class.getDeclaredMethod("processDependency",
+      var method = AddDependency.class.getDeclaredMethod(PROCESS_DEPENDENCY,
           PackageVersion.class, PackageDependency.class);
       method.setAccessible(true);
       JSONObject result = (JSONObject) method.invoke(addDependency, mockPackageVersion, mockPackageDependency);
 
       assertNotNull(result);
-      assertFalse(result.getBoolean("error"));
+      assertFalse(result.getBoolean(ERROR_MESSAGE));
       assertTrue(result.getBoolean("needFlush"));
-      verify(mockDependency).setVersion("2.0.0");
+      verify(mockDependency).setVersion(NEW_VERSION);
       verify(mockDependency).setInstallationStatus(DependencyUtil.STATUS_PENDING);
       verify(obDal).save(mockDependency);
     }
@@ -345,33 +359,33 @@ class AddDependencyTest {
    */
   @Test
   void testProcessDependencyVersionConflict() throws Exception {
-    when(mockPackageDependency.getGroup()).thenReturn("com.test");
-    when(mockPackageDependency.getArtifact()).thenReturn("artifact");
-    when(mockPackageDependency.getVersion()).thenReturn("1.0.0");
+    when(mockPackageDependency.getGroup()).thenReturn(TEST_PACKAGE);
+    when(mockPackageDependency.getArtifact()).thenReturn(ARTIFACT);
+    when(mockPackageDependency.getVersion()).thenReturn(VERSION);
     when(mockPackageDependency.isExternalDependency()).thenReturn(false);
-    when(mockModule.getVersion()).thenReturn("2.0.0");
+    when(mockModule.getVersion()).thenReturn(NEW_VERSION);
 
     try (MockedStatic<DependencyUtil> depUtilStatic = mockStatic(DependencyUtil.class);
          MockedStatic<PackageUtil> pkgUtilStatic = mockStatic(PackageUtil.class);
          MockedStatic<OBMessageUtils> msgUtilsStatic = mockStatic(OBMessageUtils.class)) {
 
-      depUtilStatic.when(() -> DependencyUtil.getInstalledModule("com.test", "artifact"))
+      depUtilStatic.when(() -> DependencyUtil.getInstalledModule(TEST_PACKAGE, ARTIFACT))
           .thenReturn(mockModule);
-      depUtilStatic.when(() -> DependencyUtil.getInstalledDependency("com.test", "artifact", false))
+      depUtilStatic.when(() -> DependencyUtil.getInstalledDependency(TEST_PACKAGE, ARTIFACT, false))
           .thenReturn(mockDependency);
-      pkgUtilStatic.when(() -> PackageUtil.compareVersions("1.0.0", "2.0.0"))
+      pkgUtilStatic.when(() -> PackageUtil.compareVersions(VERSION, NEW_VERSION))
           .thenReturn(-1);
       msgUtilsStatic.when(() -> OBMessageUtils.messageBD("ETDEP_Version_Conflict"))
           .thenReturn("Version conflict");
 
-      var method = AddDependency.class.getDeclaredMethod("processDependency",
+      var method = AddDependency.class.getDeclaredMethod(PROCESS_DEPENDENCY,
           PackageVersion.class, PackageDependency.class);
       method.setAccessible(true);
       JSONObject result = (JSONObject) method.invoke(addDependency, mockPackageVersion, mockPackageDependency);
 
       assertNotNull(result);
-      assertTrue(result.getBoolean("error"));
-      assertTrue(result.getString("message").contains("Version conflict"));
+      assertTrue(result.getBoolean(ERROR_MESSAGE));
+      assertTrue(result.getString(MESSAGE).contains("Version conflict"));
     }
   }
 
@@ -386,17 +400,17 @@ class AddDependencyTest {
   void testCreateResponseActionsSuccess() throws Exception {
     var method = AddDependency.class.getDeclaredMethod("createResponseActions", String.class, String.class);
     method.setAccessible(true);
-    JSONArray actions = (JSONArray) method.invoke(addDependency, "Test success message", "success");
+    JSONArray actions = (JSONArray) method.invoke(addDependency, "Test success message", SUCCESS);
 
     assertNotNull(actions);
     assertEquals(3, actions.length());
 
     JSONObject firstAction = actions.getJSONObject(0);
-    assertTrue(firstAction.has("showMsgInProcessView"));
-    JSONObject msgInfo = firstAction.getJSONObject("showMsgInProcessView");
-    assertEquals("success", msgInfo.getString("msgType"));
+    assertTrue(firstAction.has(SHOW_MESSAGE_IN_PROCESS_VIEW));
+    JSONObject msgInfo = firstAction.getJSONObject(SHOW_MESSAGE_IN_PROCESS_VIEW);
+    assertEquals(SUCCESS, msgInfo.getString(MESSAGE_TYPE));
     assertEquals("Success", msgInfo.getString("msgTitle"));
-    assertEquals("Test success message", msgInfo.getString("msgText"));
+    assertEquals("Test success message", msgInfo.getString(MESSAGE_TEXT));
 
     JSONObject secondAction = actions.getJSONObject(1);
     assertTrue(secondAction.has("openDirectTab"));
@@ -416,17 +430,17 @@ class AddDependencyTest {
   void testCreateResponseActionsError() throws Exception {
     var method = AddDependency.class.getDeclaredMethod("createResponseActions", String.class, String.class);
     method.setAccessible(true);
-    JSONArray actions = (JSONArray) method.invoke(addDependency, "Test error message", "error");
+    JSONArray actions = (JSONArray) method.invoke(addDependency, "Test error message", ERROR_MESSAGE);
 
     assertNotNull(actions);
     assertEquals(1, actions.length());
 
     JSONObject action = actions.getJSONObject(0);
-    assertTrue(action.has("showMsgInProcessView"));
-    JSONObject msgInfo = action.getJSONObject("showMsgInProcessView");
-    assertEquals("error", msgInfo.getString("msgType"));
-    assertEquals("Error", msgInfo.getString("msgTitle"));
-    assertEquals("Test error message", msgInfo.getString("msgText"));
+    assertTrue(action.has(SHOW_MESSAGE_IN_PROCESS_VIEW));
+    JSONObject msgInfo = action.getJSONObject(SHOW_MESSAGE_IN_PROCESS_VIEW);
+    assertEquals(ERROR_MESSAGE, msgInfo.getString(MESSAGE_TYPE));
+    assertEquals(ERROR, msgInfo.getString("msgTitle"));
+    assertEquals("Test error message", msgInfo.getString(MESSAGE_TEXT));
   }
 
   /**
@@ -442,9 +456,9 @@ class AddDependencyTest {
     method.setAccessible(true);
 
     assertAll(
-        () -> assertEquals("Success", method.invoke(addDependency, "success")),
+        () -> assertEquals("Success", method.invoke(addDependency, SUCCESS)),
         () -> assertEquals("Warning", method.invoke(addDependency, "warning")),
-        () -> assertEquals("Error", method.invoke(addDependency, "error")),
+        () -> assertEquals(ERROR, method.invoke(addDependency, ERROR_MESSAGE)),
         () -> assertEquals("Message", method.invoke(addDependency, "unknown"))
     );
   }
@@ -463,9 +477,9 @@ class AddDependencyTest {
     JSONObject result = addDependency.execute(parameters, invalidJson);
 
     assertNotNull(result);
-    assertTrue(result.has("message"));
-    JSONObject message = result.getJSONObject("message");
-    assertEquals("error", message.getString("severity"));
-    assertEquals("Error", message.getString("title"));
+    assertTrue(result.has(MESSAGE));
+    JSONObject message = result.getJSONObject(MESSAGE);
+    assertEquals(ERROR_MESSAGE, message.getString("severity"));
+    assertEquals(ERROR, message.getString("title"));
   }
 }

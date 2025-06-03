@@ -10,6 +10,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.PACKAGE_DEPENDENCY;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.PACKAGE_VERSION_ID;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.PACKAGE_VERSION_ID_PARAMETER;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.PACKAGE_VERSION_QUERY;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.RESULT_NOT_NULL_MESSAGE;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.TEST_ID;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -53,16 +59,16 @@ class ModuleDependenciesPEHQLTransformerTest {
   @DisplayName("Should transform HQL query with all placeholders correctly")
   void shouldTransformHqlQueryWithAllPlaceholders() {
     String packageVersionId = "TEST-PACKAGE-VERSION-ID-123";
-    requestParameters.put("@ETDEP_Package_Version.id@", packageVersionId);
+    requestParameters.put(PACKAGE_VERSION_ID, packageVersionId);
 
     String result = transformer.transformHqlQuery(baseHqlQuery, requestParameters, queryNamedParameters);
 
     assertAll("HQL transformation should replace all placeholders correctly",
         () -> assertFalse(result.contains("@selectClause@"),
             "Select clause placeholder should be replaced"),
-        () -> assertTrue(result.contains("ETDEP_Package_Dependency e"),
+        () -> assertTrue(result.contains(PACKAGE_DEPENDENCY),
             "From clause should contain entity alias"),
-        () -> assertTrue(result.contains("e.packageVersion.id = :packageVersionId"),
+        () -> assertTrue(result.contains(PACKAGE_VERSION_QUERY),
             "Where clause should contain parameterized condition"),
         () -> assertTrue(result.contains("e.group <> 'com.etendoerp.platform'"),
             "Where clause should exclude platform group"),
@@ -74,7 +80,7 @@ class ModuleDependenciesPEHQLTransformerTest {
             "Order by content should be present")
     );
 
-    assertEquals(packageVersionId, queryNamedParameters.get("packageVersionId"),
+    assertEquals(packageVersionId, queryNamedParameters.get(PACKAGE_VERSION_ID_PARAMETER),
         "Package version ID should be added to named parameters");
   }
 
@@ -84,15 +90,15 @@ class ModuleDependenciesPEHQLTransformerTest {
   @Test
   @DisplayName("Should handle null package version ID gracefully")
   void shouldHandleNullPackageVersionId() {
-    requestParameters.put("@ETDEP_Package_Version.id@", null);
+    requestParameters.put(PACKAGE_VERSION_ID, null);
 
     String result = transformer.transformHqlQuery(baseHqlQuery, requestParameters, queryNamedParameters);
 
     assertAll("Should handle null package version ID",
-        () -> assertNotNull(result, "Result should not be null"),
-        () -> assertNull(queryNamedParameters.get("packageVersionId"),
+        () -> assertNotNull(result, RESULT_NOT_NULL_MESSAGE),
+        () -> assertNull(queryNamedParameters.get(PACKAGE_VERSION_ID_PARAMETER),
             "Package version ID parameter should be null"),
-        () -> assertTrue(result.contains("e.packageVersion.id = :packageVersionId"),
+        () -> assertTrue(result.contains(PACKAGE_VERSION_QUERY),
             "Parameter placeholder should still be present")
     );
   }
@@ -108,10 +114,10 @@ class ModuleDependenciesPEHQLTransformerTest {
     String result = transformer.transformHqlQuery(baseHqlQuery, requestParameters, queryNamedParameters);
 
     assertAll("Should handle empty request parameters",
-        () -> assertNotNull(result, "Result should not be null"),
-        () -> assertNull(queryNamedParameters.get("packageVersionId"),
+        () -> assertNotNull(result, RESULT_NOT_NULL_MESSAGE),
+        () -> assertNull(queryNamedParameters.get(PACKAGE_VERSION_ID_PARAMETER),
             "Package version ID should be null when not provided"),
-        () -> assertTrue(result.contains("ETDEP_Package_Dependency e"),
+        () -> assertTrue(result.contains(PACKAGE_DEPENDENCY),
             "From clause should still be transformed")
     );
   }
@@ -137,7 +143,7 @@ class ModuleDependenciesPEHQLTransformerTest {
 
     assertAll("FROM clause validation",
         () -> assertNotNull(fromClause, "FROM clause should not be null"),
-        () -> assertTrue(fromClause.contains("ETDEP_Package_Dependency e"),
+        () -> assertTrue(fromClause.contains(PACKAGE_DEPENDENCY),
             "FROM clause should contain entity and alias"),
         () -> assertFalse(fromClause.trim().isEmpty(),
             "FROM clause should not be empty")
@@ -154,7 +160,7 @@ class ModuleDependenciesPEHQLTransformerTest {
 
     assertAll("WHERE clause validation",
         () -> assertNotNull(whereClause, "WHERE clause should not be null"),
-        () -> assertTrue(whereClause.contains("e.packageVersion.id = :packageVersionId"),
+        () -> assertTrue(whereClause.contains(PACKAGE_VERSION_QUERY),
             "Should filter by package version ID"),
         () -> assertTrue(whereClause.contains("e.group <> 'com.etendoerp.platform'"),
             "Should exclude platform group"),
@@ -208,12 +214,12 @@ class ModuleDependenciesPEHQLTransformerTest {
   @DisplayName("Should prevent SQL injection in package version parameter")
   void shouldPreventSqlInjection() {
     String maliciousInput = "'; DROP TABLE users; --";
-    requestParameters.put("@ETDEP_Package_Version.id@", maliciousInput);
+    requestParameters.put(PACKAGE_VERSION_ID, maliciousInput);
 
     String result = transformer.transformHqlQuery(baseHqlQuery, requestParameters, queryNamedParameters);
 
     assertAll("SQL injection prevention",
-        () -> assertEquals(maliciousInput, queryNamedParameters.get("packageVersionId"),
+        () -> assertEquals(maliciousInput, queryNamedParameters.get(PACKAGE_VERSION_ID_PARAMETER),
             "Malicious input should be stored as parameter value"),
         () -> assertTrue(result.contains(":packageVersionId"),
             "Should use parameterized query"),
@@ -229,7 +235,7 @@ class ModuleDependenciesPEHQLTransformerTest {
   @DisplayName("Should maintain query structure integrity")
   void shouldMaintainQueryStructureIntegrity() {
     String structuredQuery = "SELECT @selectClause@ FROM @fromClause@ WHERE active = true @whereClause@";
-    requestParameters.put("@ETDEP_Package_Version.id@", "TEST-ID");
+    requestParameters.put(PACKAGE_VERSION_ID, TEST_ID);
 
     String result = transformer.transformHqlQuery(structuredQuery, requestParameters, queryNamedParameters);
 
@@ -251,14 +257,14 @@ class ModuleDependenciesPEHQLTransformerTest {
   @DisplayName("Should handle empty HQL query")
   void shouldHandleEmptyHqlQuery() {
     String emptyQuery = "";
-    requestParameters.put("@ETDEP_Package_Version.id@", "TEST-ID");
+    requestParameters.put(PACKAGE_VERSION_ID, TEST_ID);
 
     String result = transformer.transformHqlQuery(emptyQuery, requestParameters, queryNamedParameters);
 
     assertAll("Empty query handling",
-        () -> assertNotNull(result, "Result should not be null"),
+        () -> assertNotNull(result, RESULT_NOT_NULL_MESSAGE),
         () -> assertEquals("", result, "Empty query should remain empty"),
-        () -> assertEquals("TEST-ID", queryNamedParameters.get("packageVersionId"),
+        () -> assertEquals(TEST_ID, queryNamedParameters.get(PACKAGE_VERSION_ID_PARAMETER),
             "Parameters should still be processed")
     );
   }
@@ -273,10 +279,10 @@ class ModuleDependenciesPEHQLTransformerTest {
     String query2 = "SELECT COUNT(*) FROM @fromClause@ @whereClause@";
 
     Map<String, String> params1 = new HashMap<>();
-    params1.put("@ETDEP_Package_Version.id@", "ID-1");
+    params1.put(PACKAGE_VERSION_ID, "ID-1");
 
     Map<String, String> params2 = new HashMap<>();
-    params2.put("@ETDEP_Package_Version.id@", "ID-2");
+    params2.put(PACKAGE_VERSION_ID, "ID-2");
 
     Map<String, Object> namedParams1 = new HashMap<>();
     Map<String, Object> namedParams2 = new HashMap<>();
@@ -285,9 +291,9 @@ class ModuleDependenciesPEHQLTransformerTest {
     String result2 = transformer.transformHqlQuery(query2, params2, namedParams2);
 
     assertAll("Thread safety validation",
-        () -> assertEquals("ID-1", namedParams1.get("packageVersionId"),
+        () -> assertEquals("ID-1", namedParams1.get(PACKAGE_VERSION_ID_PARAMETER),
             "First transformation should have correct parameter"),
-        () -> assertEquals("ID-2", namedParams2.get("packageVersionId"),
+        () -> assertEquals("ID-2", namedParams2.get(PACKAGE_VERSION_ID_PARAMETER),
             "Second transformation should have correct parameter"),
         () -> assertNotEquals(result1, result2,
             "Results should be different for different inputs"),

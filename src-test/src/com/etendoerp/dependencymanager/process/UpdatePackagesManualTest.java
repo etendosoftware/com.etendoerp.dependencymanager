@@ -1,13 +1,23 @@
 package com.etendoerp.dependencymanager.process;
 
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.MESSAGE;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.RESPONSE_ACTIONS;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.RESULT_NOT_NULL_MESSAGE;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.RETRY_EXECUTION;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.SHOW_MESSAGE_IN_PROCESS_VIEW;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.SUCCESS;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
-
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.mockConstruction;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
@@ -66,7 +76,7 @@ class UpdatePackagesManualTest {
     obdalMockedStatic.when(OBDal::getInstance).thenReturn(mockOBDal);
     obMessageUtilsMockedStatic.when(() -> OBMessageUtils.messageBD("ProcessOK"))
         .thenReturn(SUCCESS_MESSAGE);
-    obMessageUtilsMockedStatic.when(() -> OBMessageUtils.messageBD("success"))
+    obMessageUtilsMockedStatic.when(() -> OBMessageUtils.messageBD(SUCCESS))
         .thenReturn("Success");
   }
 
@@ -106,26 +116,26 @@ class UpdatePackagesManualTest {
       JSONObject result = processHandler.doExecute(parameters, data);
 
       assertAll("Success response validation",
-          () -> assertNotNull(result, "Result should not be null"),
-          () -> assertTrue(result.has("responseActions"), "Should contain responseActions"),
+          () -> assertNotNull(result, RESULT_NOT_NULL_MESSAGE),
+          () -> assertTrue(result.has(RESPONSE_ACTIONS), "Should contain responseActions"),
           () -> {
-            JSONArray actions = result.getJSONArray("responseActions");
+            JSONArray actions = result.getJSONArray(RESPONSE_ACTIONS);
             assertEquals(2, actions.length(), "Should have 2 response actions");
           },
           () -> {
-            JSONArray actions = result.getJSONArray("responseActions");
+            JSONArray actions = result.getJSONArray(RESPONSE_ACTIONS);
             JSONObject messageAction = actions.getJSONObject(0);
-            assertTrue(messageAction.has("showMsgInProcessView"),
+            assertTrue(messageAction.has(SHOW_MESSAGE_IN_PROCESS_VIEW),
                 "First action should be showMsgInProcessView");
 
-            JSONObject message = messageAction.getJSONObject("showMsgInProcessView");
-            assertEquals("success", message.getString("msgType"),
+            JSONObject message = messageAction.getJSONObject(SHOW_MESSAGE_IN_PROCESS_VIEW);
+            assertEquals(SUCCESS, message.getString("msgType"),
                 "Message type should be success");
             assertEquals(SUCCESS_MESSAGE, message.getString("msgText"),
                 "Message text should match expected");
           },
           () -> {
-            JSONArray actions = result.getJSONArray("responseActions");
+            JSONArray actions = result.getJSONArray(RESPONSE_ACTIONS);
             JSONObject refreshAction = actions.getJSONObject(1);
             assertTrue(refreshAction.has("refreshGrid"),
                 "Second action should be refreshGrid");
@@ -168,13 +178,13 @@ class UpdatePackagesManualTest {
       JSONObject result = processHandler.doExecute(parameters, data);
 
       assertAll("Error response validation",
-          () -> assertNotNull(result, "Result should not be null"),
-          () -> assertTrue(result.has("message"), "Should contain error message"),
-          () -> assertTrue(result.has("retryExecution"), "Should allow retry execution"),
-          () -> assertTrue(result.getBoolean("retryExecution"),
+          () -> assertNotNull(result, RESULT_NOT_NULL_MESSAGE),
+          () -> assertTrue(result.has(MESSAGE), "Should contain error message"),
+          () -> assertTrue(result.has(RETRY_EXECUTION), "Should allow retry execution"),
+          () -> assertTrue(result.getBoolean(RETRY_EXECUTION),
               "Retry execution should be true"),
           () -> {
-            JSONObject message = result.getJSONObject("message");
+            JSONObject message = result.getJSONObject(MESSAGE);
             assertEquals("error", message.getString("severity"),
                 "Message severity should be error");
             assertEquals(TRANSLATED_ERROR, message.getString("text"),
@@ -205,23 +215,23 @@ class UpdatePackagesManualTest {
 
     String testMessage = "Test success message";
 
-    obMessageUtilsMockedStatic.when(() -> OBMessageUtils.messageBD("success"))
+    obMessageUtilsMockedStatic.when(() -> OBMessageUtils.messageBD(SUCCESS))
         .thenReturn("Success");
 
     JSONObject result = (JSONObject) getSuccessMessageMethod.invoke(null, testMessage);
 
     assertAll("Success message structure",
-        () -> assertNotNull(result, "Result should not be null"),
-        () -> assertTrue(result.has("responseActions"), "Should have responseActions"),
+        () -> assertNotNull(result, RESULT_NOT_NULL_MESSAGE),
+        () -> assertTrue(result.has(RESPONSE_ACTIONS), "Should have responseActions"),
         () -> {
-          JSONArray actions = result.getJSONArray("responseActions");
+          JSONArray actions = result.getJSONArray(RESPONSE_ACTIONS);
           assertEquals(2, actions.length(), "Should have exactly 2 actions");
 
           JSONObject messageAction = actions.getJSONObject(0);
-          assertTrue(messageAction.has("showMsgInProcessView"));
+          assertTrue(messageAction.has(SHOW_MESSAGE_IN_PROCESS_VIEW));
 
-          JSONObject msgInBPTab = messageAction.getJSONObject("showMsgInProcessView");
-          assertEquals("success", msgInBPTab.getString("msgType"));
+          JSONObject msgInBPTab = messageAction.getJSONObject(SHOW_MESSAGE_IN_PROCESS_VIEW);
+          assertEquals(SUCCESS, msgInBPTab.getString("msgType"));
           assertEquals("Success", msgInBPTab.getString("msgTitle"));
           assertEquals(testMessage, msgInBPTab.getString("msgText"));
 
@@ -249,13 +259,13 @@ class UpdatePackagesManualTest {
     JSONObject result = (JSONObject) getErrorMessageMethod.invoke(null, testErrorMessage);
 
     assertAll("Error message structure",
-        () -> assertNotNull(result, "Result should not be null"),
-        () -> assertTrue(result.has("message"), "Should contain message object"),
-        () -> assertTrue(result.has("retryExecution"), "Should contain retryExecution flag"),
-        () -> assertTrue(result.getBoolean("retryExecution"),
+        () -> assertNotNull(result, RESULT_NOT_NULL_MESSAGE),
+        () -> assertTrue(result.has(MESSAGE), "Should contain message object"),
+        () -> assertTrue(result.has(RETRY_EXECUTION), "Should contain retryExecution flag"),
+        () -> assertTrue(result.getBoolean(RETRY_EXECUTION),
             "RetryExecution should be true"),
         () -> {
-          JSONObject message = result.getJSONObject("message");
+          JSONObject message = result.getJSONObject(MESSAGE);
           assertEquals("error", message.getString("severity"),
               "Severity should be error");
           assertEquals(testErrorMessage, message.getString("text"),

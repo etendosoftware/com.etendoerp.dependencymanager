@@ -1,5 +1,8 @@
 package com.etendoerp.dependencymanager.datasource;
 
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.PARENT1;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.PARENT2;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.RESULT_NOT_NULL_MESSAGE;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -10,7 +13,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
-
 
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -61,7 +63,6 @@ class AddSubDependencyDSTest {
   private PackageDependency mockDependency3;
 
   private Map<String, String> parameters;
-  private List<PackageDependency> dependenciesList;
 
   /**
    * Sets up the test environment before each test.
@@ -70,7 +71,7 @@ class AddSubDependencyDSTest {
   @BeforeEach
   void setUp() {
     parameters = new HashMap<>();
-    dependenciesList = new ArrayList<>();
+    List<PackageDependency> dependenciesList = new ArrayList<>();
 
     dependenciesList.addAll(Arrays.asList(mockDependency1, mockDependency2, mockDependency3));
 
@@ -100,7 +101,7 @@ class AddSubDependencyDSTest {
 
         List<Map<String, Object>> result = addSubDependencyDS.getGridData(parameters, mockPackageVersion);
 
-        assertNotNull(result, "Result should not be null");
+        assertNotNull(result, RESULT_NOT_NULL_MESSAGE);
         assertTrue(result.isEmpty(), "Result should be empty when no dependencies exist");
       }
     }
@@ -134,7 +135,7 @@ class AddSubDependencyDSTest {
         List<Map<String, Object>> result = addSubDependencyDS.getGridData(parameters, mockPackageVersion);
 
         assertAll(
-            () -> assertNotNull(result, "Result should not be null"),
+            () -> assertNotNull(result, RESULT_NOT_NULL_MESSAGE),
             () -> assertEquals(1, result.size(), "Should return 1 dependency"),
             () -> assertFalse(result.get(0).containsKey(DependencyManagerConstants.PARENT),
                 "Should not contain parent key when no parent exists")
@@ -160,15 +161,15 @@ class AddSubDependencyDSTest {
 
       AddSubDependencyDS.SubDependencySelectedFilters filters =
           (AddSubDependencyDS.SubDependencySelectedFilters) addSubDependencyDS.createSelectedFilters();
-      filters.addParent("parent1");
+      filters.addParent(PARENT1);
 
       List<Map<String, Object>> result = addSubDependencyDS.applyFilterAndSort(
           parameters, inputResult, filters);
 
       assertAll(
-          () -> assertNotNull(result, "Result should not be null"),
+          () -> assertNotNull(result, RESULT_NOT_NULL_MESSAGE),
           () -> assertEquals(1, result.size(), "Should filter to 1 dependency with parent1"),
-          () -> assertEquals("parent1", result.get(0).get(DependencyManagerConstants.PARENT))
+          () -> assertEquals(PARENT1, result.get(0).get(DependencyManagerConstants.PARENT))
       );
     }
 
@@ -190,7 +191,7 @@ class AddSubDependencyDSTest {
           parameters, inputResult, filters);
 
       assertAll(
-          () -> assertNotNull(result, "Result should not be null"),
+          () -> assertNotNull(result, RESULT_NOT_NULL_MESSAGE),
           () -> assertEquals(3, result.size(), "Should return all dependencies when no filter applied")
       );
     }
@@ -208,14 +209,14 @@ class AddSubDependencyDSTest {
 
       AddSubDependencyDS.SubDependencySelectedFilters filters =
           (AddSubDependencyDS.SubDependencySelectedFilters) addSubDependencyDS.createSelectedFilters();
-      filters.addParent("parent1");
-      filters.addParent("parent2");
+      filters.addParent(PARENT1);
+      filters.addParent(PARENT2);
 
       List<Map<String, Object>> result = addSubDependencyDS.applyFilterAndSort(
           parameters, inputResult, filters);
 
       assertAll(
-          () -> assertNotNull(result, "Result should not be null"),
+          () -> assertNotNull(result, RESULT_NOT_NULL_MESSAGE),
           () -> assertEquals(2, result.size(), "Should filter to 2 dependencies with parent1 or parent2")
       );
     }
@@ -224,11 +225,11 @@ class AddSubDependencyDSTest {
       List<Map<String, Object>> result = new ArrayList<>();
 
       Map<String, Object> dep1 = new HashMap<>();
-      dep1.put(DependencyManagerConstants.PARENT, "parent1");
+      dep1.put(DependencyManagerConstants.PARENT, PARENT1);
       dep1.put(DependencyManagerConstants.ARTIFACT, "artifact1");
 
       Map<String, Object> dep2 = new HashMap<>();
-      dep2.put(DependencyManagerConstants.PARENT, "parent2");
+      dep2.put(DependencyManagerConstants.PARENT, PARENT2);
       dep2.put(DependencyManagerConstants.ARTIFACT, "artifact2");
 
       Map<String, Object> dep3 = new HashMap<>();
@@ -386,7 +387,7 @@ class AddSubDependencyDSTest {
     void shouldAllowSettingAndGettingParentList() {
       AddSubDependencyDS.SubDependencySelectedFilters filters =
           new AddSubDependencyDS.SubDependencySelectedFilters();
-      List<String> parentList = Arrays.asList("parent1", "parent2");
+      List<String> parentList = Arrays.asList(PARENT1, PARENT2);
 
       filters.setParent(parentList);
 
@@ -405,13 +406,13 @@ class AddSubDependencyDSTest {
       AddSubDependencyDS.SubDependencySelectedFilters filters =
           new AddSubDependencyDS.SubDependencySelectedFilters();
 
-      filters.addParent("parent1");
-      filters.addParent("parent2");
+      filters.addParent(PARENT1);
+      filters.addParent(PARENT2);
 
       assertAll(
           () -> assertEquals(2, filters.getParent().size(), "Should have 2 parents"),
-          () -> assertTrue(filters.getParent().contains("parent1"), "Should contain parent1"),
-          () -> assertTrue(filters.getParent().contains("parent2"), "Should contain parent2")
+          () -> assertTrue(filters.getParent().contains(PARENT1), "Should contain parent1"),
+          () -> assertTrue(filters.getParent().contains(PARENT2), "Should contain parent2")
       );
     }
   }

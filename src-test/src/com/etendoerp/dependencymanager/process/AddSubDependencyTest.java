@@ -1,9 +1,30 @@
 package com.etendoerp.dependencymanager.process;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.CRITERIA;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.DEPENDENCY_ID_1;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.DEPENDENCY_ID_2;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.FILTER;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.MODULE_ETENDOERP;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.MODULE_OPENBRAVO_CORE;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.MODULE_SECURE_WEBSERVICES;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.OPERATOR;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.VALUE;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 
 import java.util.HashMap;
 import java.util.Map;
@@ -28,7 +49,6 @@ import com.etendoerp.dependencymanager.util.DependencyManagerConstants;
 
 /**
  * Unit tests for AddSubDependency class using JUnit 5 and Mockito 5.0
- *
  * This test class demonstrates:
  * - Proper mocking of OBDal static methods
  * - Comprehensive test coverage for all scenarios
@@ -46,9 +66,6 @@ class AddSubDependencyTest {
   private PackageDependency mockDependency2;
 
   @Mock
-  private PackageDependency mockDependency3;
-
-  @Mock
   private OBDal mockOBDal;
 
   @InjectMocks
@@ -57,34 +74,20 @@ class AddSubDependencyTest {
   private MockedStatic<OBDal> mockedOBDalStatic;
   private Map<String, Object> parameters;
 
-  // Test constants
-  private static final String DEPENDENCY_ID_1 = "dep-001";
-  private static final String DEPENDENCY_ID_2 = "dep-002";
-  private static final String DEPENDENCY_ID_3 = "dep-003";
-
   @BeforeEach
   void setUp() {
-    // Setup static mock for OBDal
     mockedOBDalStatic = mockStatic(OBDal.class);
     mockedOBDalStatic.when(OBDal::getInstance).thenReturn(mockOBDal);
 
-    // Setup test parameters
     parameters = new HashMap<>();
 
-    // Configure mock dependencies
-    setupMockDependencies();
   }
 
   @AfterEach
   void tearDown() {
-    // Critical: Close static mocks to prevent test pollution
     if (mockedOBDalStatic != null) {
       mockedOBDalStatic.close();
     }
-  }
-
-  private void setupMockDependencies() {
-
   }
 
   @Nested
@@ -93,81 +96,70 @@ class AddSubDependencyTest {
 
     @Test
     @DisplayName("Should create single criteria for one dependency")
-    void testExecuteWithSingleDependency() throws Exception {
-      // Given
+    void testExecuteWithSingleDependency() {
       when(mockDependency1.getId()).thenReturn(DEPENDENCY_ID_1);
 
-      // Configure OBDal mock to return specific dependencies
       when(mockOBDal.get(eq(PackageDependency.class), eq(DEPENDENCY_ID_1)))
           .thenReturn(mockDependency1);
 
       String content = createJsonContent(DEPENDENCY_ID_1);
 
-      // When
       JSONObject result = addSubDependency.execute(parameters, content);
 
-      // Then
       assertAll("Single dependency result validation",
-          () -> assertTrue(result.has("filter"), "Result should contain filter"),
+          () -> assertTrue(result.has(FILTER), "Result should contain filter"),
           () -> {
-            JSONObject filter = result.getJSONObject("filter");
-            assertEquals("and", filter.getString("operator"), "Filter operator should be 'and'");
+            JSONObject filter = result.getJSONObject(FILTER);
+            assertEquals("and", filter.getString(OPERATOR), "Filter operator should be 'and'");
             assertEquals("AdvancedCriteria", filter.getString("_constructor"), "Constructor should be AdvancedCriteria");
 
-            JSONArray criteria = filter.getJSONArray("criteria");
+            JSONArray criteria = filter.getJSONArray(CRITERIA);
             assertEquals(1, criteria.length(), "Should have exactly one criteria item");
 
             JSONObject criteriaItem = criteria.getJSONObject(0);
             assertEquals(DependencyManagerConstants.PARENT, criteriaItem.getString("fieldName"));
-            assertEquals("iEquals", criteriaItem.getString("operator"));
-            assertEquals(DEPENDENCY_ID_1, criteriaItem.getString("value"));
+            assertEquals("iEquals", criteriaItem.getString(OPERATOR));
+            assertEquals(DEPENDENCY_ID_1, criteriaItem.getString(VALUE));
           }
       );
 
-      // Verify OBDal interaction
       verify(mockOBDal, times(1)).get(PackageDependency.class, DEPENDENCY_ID_1);
     }
 
     @Test
     @DisplayName("Should create OR criteria for multiple dependencies")
-    void testExecuteWithMultipleDependencies() throws Exception {
-      // Given
+    void testExecuteWithMultipleDependencies() {
       when(mockDependency1.getId()).thenReturn(DEPENDENCY_ID_1);
       when(mockDependency2.getId()).thenReturn(DEPENDENCY_ID_2);
 
-      // Configure OBDal mock to return specific dependencies
       when(mockOBDal.get(eq(PackageDependency.class), eq(DEPENDENCY_ID_1)))
           .thenReturn(mockDependency1);
       when(mockOBDal.get(eq(PackageDependency.class), eq(DEPENDENCY_ID_2)))
           .thenReturn(mockDependency2);
       String content = createJsonContent(DEPENDENCY_ID_1, DEPENDENCY_ID_2);
 
-      // When
       JSONObject result = addSubDependency.execute(parameters, content);
 
-      // Then
       assertAll("Multiple dependencies result validation",
-          () -> assertTrue(result.has("filter"), "Result should contain filter"),
+          () -> assertTrue(result.has(FILTER), "Result should contain filter"),
           () -> {
-            JSONObject filter = result.getJSONObject("filter");
-            assertEquals("and", filter.getString("operator"), "Top level operator should be 'and'");
+            JSONObject filter = result.getJSONObject(FILTER);
+            assertEquals("and", filter.getString(OPERATOR), "Top level operator should be 'and'");
 
-            JSONArray criteria = filter.getJSONArray("criteria");
+            JSONArray criteria = filter.getJSONArray(CRITERIA);
             assertEquals(1, criteria.length(), "Should have exactly one criteria item (OR group)");
 
             JSONObject orCriteria = criteria.getJSONObject(0);
-            assertEquals("or", orCriteria.getString("operator"), "Inner operator should be 'or'");
+            assertEquals("or", orCriteria.getString(OPERATOR), "Inner operator should be 'or'");
 
-            JSONArray orCriteriaArray = orCriteria.getJSONArray("criteria");
+            JSONArray orCriteriaArray = orCriteria.getJSONArray(CRITERIA);
             assertEquals(2, orCriteriaArray.length(), "OR criteria should have 2 items");
 
-            // Validate individual criteria items
             validateCriteriaItem(orCriteriaArray.getJSONObject(0), DEPENDENCY_ID_1);
             validateCriteriaItem(orCriteriaArray.getJSONObject(1), DEPENDENCY_ID_2);
           }
       );
 
-      // Verify OBDal interactions
       verify(mockOBDal, times(1)).get(PackageDependency.class, DEPENDENCY_ID_1);
       verify(mockOBDal, times(1)).get(PackageDependency.class, DEPENDENCY_ID_2);
     }
@@ -175,8 +167,8 @@ class AddSubDependencyTest {
     private void validateCriteriaItem(JSONObject criteriaItem, String expectedValue) throws Exception {
       assertAll("Criteria item validation for " + expectedValue,
           () -> assertEquals(DependencyManagerConstants.PARENT, criteriaItem.getString("fieldName")),
-          () -> assertEquals("iEquals", criteriaItem.getString("operator")),
-          () -> assertEquals(expectedValue, criteriaItem.getString("value")),
+          () -> assertEquals("iEquals", criteriaItem.getString(OPERATOR)),
+          () -> assertEquals(expectedValue, criteriaItem.getString(VALUE)),
           () -> assertEquals("AdvancedCriteria", criteriaItem.getString("_constructor"))
       );
     }
@@ -188,81 +180,67 @@ class AddSubDependencyTest {
 
     @Test
     @DisplayName("Should return empty result when dependencyId is missing")
-    void testExecuteWithoutDependencyId() throws Exception {
-      // Given
+    void testExecuteWithoutDependencyId() {
       String content = "{}";
 
-      // When
       JSONObject result = addSubDependency.execute(parameters, content);
 
-      // Then
       assertAll("Empty result validation",
           () -> assertNotNull(result, "Result should not be null"),
-          () -> assertFalse(result.has("filter"), "Result should not contain filter"),
+          () -> assertFalse(result.has(FILTER), "Result should not contain filter"),
           () -> assertEquals(0, result.length(), "Result should be empty")
       );
 
-      // Verify no OBDal interactions
       verify(mockOBDal, never()).get(any(Class.class), any(String.class));
     }
 
     @Test
     @DisplayName("Should return empty result when dependency array is empty")
-    void testExecuteWithEmptyDependencyArray() throws Exception {
-      // Given
+    void testExecuteWithEmptyDependencyArray() {
       String content = "{\"dependencyId\": []}";
 
-      // When
       JSONObject result = addSubDependency.execute(parameters, content);
 
-      // Then
       assertAll("Empty array result validation",
           () -> assertNotNull(result, "Result should not be null"),
-          () -> assertFalse(result.has("filter"), "Result should not contain filter"),
+          () -> assertFalse(result.has(FILTER), "Result should not contain filter"),
           () -> assertEquals(0, result.length(), "Result should be empty")
       );
 
-      // Verify no OBDal interactions
       verify(mockOBDal, never()).get(any(Class.class), any(String.class));
     }
 
     @Test
     @DisplayName("Should throw OBException when JSON content is invalid")
     void testExecuteWithInvalidJson() {
-      // Given
       String invalidContent = "invalid json content";
 
-      // When & Then
       OBException exception = assertThrows(OBException.class,
           () -> addSubDependency.execute(parameters, invalidContent));
 
       assertNotNull(exception.getCause(), "Exception should have a cause");
 
-      // Verify no OBDal interactions
       verify(mockOBDal, never()).get(any(Class.class), any(String.class));
     }
 
     @Test
     @DisplayName("Should throw OBException when OBDal throws exception")
     void testExecuteWithOBDalException() {
-      // Given
       String content = createJsonContent(DEPENDENCY_ID_1);
       when(mockOBDal.get(eq(PackageDependency.class), eq(DEPENDENCY_ID_1)))
           .thenThrow(new RuntimeException("Database error"));
 
-      // When & Then
       OBException exception = assertThrows(OBException.class,
           () -> addSubDependency.execute(parameters, content));
 
       assertNotNull(exception.getCause(), "Exception should have a cause");
-      assertTrue(exception.getCause() instanceof RuntimeException);
+      assertInstanceOf(RuntimeException.class, exception.getCause());
       assertEquals("Database error", exception.getCause().getMessage());
     }
 
     @Test
     @DisplayName("Should handle null content gracefully")
     void testExecuteWithNullContent() {
-      // When & Then
       assertThrows(OBException.class,
           () -> addSubDependency.execute(parameters, null));
     }
@@ -274,51 +252,46 @@ class AddSubDependencyTest {
 
     @Test
     @DisplayName("Should handle real-world scenario with mixed dependencies")
-    void testRealWorldScenario() throws Exception {
-      // Given - Simulate a real scenario with actual dependency IDs
+    void testRealWorldScenario() {
       String content = createJsonContent(
-          "com.etendoerp.module1",
-          "org.openbravo.core",
-          "com.smf.securewebservices"
+          MODULE_ETENDOERP,
+          MODULE_OPENBRAVO_CORE,
+          MODULE_SECURE_WEBSERVICES
       );
 
-      // Configure mocks for realistic IDs
       PackageDependency module1 = mock(PackageDependency.class);
       PackageDependency coreModule = mock(PackageDependency.class);
       PackageDependency webservices = mock(PackageDependency.class);
 
-      when(module1.getId()).thenReturn("com.etendoerp.module1");
-      when(coreModule.getId()).thenReturn("org.openbravo.core");
-      when(webservices.getId()).thenReturn("com.smf.securewebservices");
+      when(module1.getId()).thenReturn(MODULE_ETENDOERP);
+      when(coreModule.getId()).thenReturn(MODULE_OPENBRAVO_CORE);
+      when(webservices.getId()).thenReturn(MODULE_SECURE_WEBSERVICES);
 
-      when(mockOBDal.get(eq(PackageDependency.class), eq("com.etendoerp.module1")))
+      when(mockOBDal.get(eq(PackageDependency.class), eq(MODULE_ETENDOERP)))
           .thenReturn(module1);
-      when(mockOBDal.get(eq(PackageDependency.class), eq("org.openbravo.core")))
+      when(mockOBDal.get(eq(PackageDependency.class), eq(MODULE_OPENBRAVO_CORE)))
           .thenReturn(coreModule);
-      when(mockOBDal.get(eq(PackageDependency.class), eq("com.smf.securewebservices")))
+      when(mockOBDal.get(eq(PackageDependency.class), eq(MODULE_SECURE_WEBSERVICES)))
           .thenReturn(webservices);
 
-      // When
       JSONObject result = addSubDependency.execute(parameters, content);
 
-      // Then
       assertAll("Real world scenario validation",
-          () -> assertTrue(result.has("filter"), "Should have filter"),
+          () -> assertTrue(result.has(FILTER), "Should have filter"),
           () -> {
-            JSONObject filter = result.getJSONObject("filter");
-            JSONArray criteria = filter.getJSONArray("criteria");
+            JSONObject filter = result.getJSONObject(FILTER);
+            JSONArray criteria = filter.getJSONArray(CRITERIA);
             JSONObject orCriteria = criteria.getJSONObject(0);
-            JSONArray orCriteriaArray = orCriteria.getJSONArray("criteria");
+            JSONArray orCriteriaArray = orCriteria.getJSONArray(CRITERIA);
 
             assertEquals(3, orCriteriaArray.length(), "Should have 3 dependencies");
 
-            // Verify all dependencies are included
             boolean hasModule1 = false, hasCore = false, hasWebservices = false;
             for (int i = 0; i < orCriteriaArray.length(); i++) {
-              String value = orCriteriaArray.getJSONObject(i).getString("value");
-              if ("com.etendoerp.module1".equals(value)) hasModule1 = true;
-              if ("org.openbravo.core".equals(value)) hasCore = true;
-              if ("com.smf.securewebservices".equals(value)) hasWebservices = true;
+              String value = orCriteriaArray.getJSONObject(i).getString(VALUE);
+              if (MODULE_ETENDOERP.equals(value)) hasModule1 = true;
+              if (MODULE_OPENBRAVO_CORE.equals(value)) hasCore = true;
+              if (MODULE_SECURE_WEBSERVICES.equals(value)) hasWebservices = true;
             }
 
             assertTrue(hasModule1, "Should include module1");

@@ -1,5 +1,9 @@
 package com.etendoerp.dependencymanager.datasource;
 
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.NEW_VERSION;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.PACKAGE_NAME;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.UNKNOWN_FIELD;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.VERSION;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -154,17 +158,17 @@ class AbstractResultComparatorTest {
     @DisplayName("Should use version comparison for version field")
     void shouldUseVersionComparisonForVersionField() {
       ConcreteResultComparator comparator = new ConcreteResultComparator(DependencyManagerConstants.VERSION);
-      Map<String, Object> map1 = createMapWithValue(DependencyManagerConstants.VERSION, "1.0.0");
-      Map<String, Object> map2 = createMapWithValue(DependencyManagerConstants.VERSION, "2.0.0");
+      Map<String, Object> map1 = createMapWithValue(DependencyManagerConstants.VERSION, VERSION);
+      Map<String, Object> map2 = createMapWithValue(DependencyManagerConstants.VERSION, NEW_VERSION);
 
-      mockedPackageUtil.when(() -> PackageUtil.compareVersions("1.0.0", "2.0.0"))
+      mockedPackageUtil.when(() -> PackageUtil.compareVersions(VERSION, NEW_VERSION))
           .thenReturn(-1);
 
       int result = comparator.compare(map1, map2);
 
       assertAll("Version comparison",
           () -> assertEquals(-1, result, "Should return negative for older version"),
-          () -> mockedPackageUtil.verify(() -> PackageUtil.compareVersions("1.0.0", "2.0.0"), times(1))
+          () -> mockedPackageUtil.verify(() -> PackageUtil.compareVersions(VERSION, NEW_VERSION), times(1))
       );
     }
 
@@ -176,16 +180,16 @@ class AbstractResultComparatorTest {
     void shouldHandleNullValuesInVersionComparison() {
       ConcreteResultComparator comparator = new ConcreteResultComparator(DependencyManagerConstants.VERSION);
       Map<String, Object> map1 = createMapWithValue(DependencyManagerConstants.VERSION, null);
-      Map<String, Object> map2 = createMapWithValue(DependencyManagerConstants.VERSION, "1.0.0");
+      Map<String, Object> map2 = createMapWithValue(DependencyManagerConstants.VERSION, VERSION);
 
-      mockedPackageUtil.when(() -> PackageUtil.compareVersions("", "1.0.0"))
+      mockedPackageUtil.when(() -> PackageUtil.compareVersions("", VERSION))
           .thenReturn(-1);
 
       int result = comparator.compare(map1, map2);
 
       assertAll("Null version handling",
           () -> assertEquals(-1, result),
-          () -> mockedPackageUtil.verify(() -> PackageUtil.compareVersions("", "1.0.0"), times(1))
+          () -> mockedPackageUtil.verify(() -> PackageUtil.compareVersions("", VERSION), times(1))
       );
     }
 
@@ -196,10 +200,10 @@ class AbstractResultComparatorTest {
     @DisplayName("Should apply descending order to version comparison")
     void shouldApplyDescendingOrderToVersionComparison() {
       ConcreteResultComparator comparator = new ConcreteResultComparator("-" + DependencyManagerConstants.VERSION);
-      Map<String, Object> map1 = createMapWithValue(DependencyManagerConstants.VERSION, "1.0.0");
-      Map<String, Object> map2 = createMapWithValue(DependencyManagerConstants.VERSION, "2.0.0");
+      Map<String, Object> map1 = createMapWithValue(DependencyManagerConstants.VERSION, VERSION);
+      Map<String, Object> map2 = createMapWithValue(DependencyManagerConstants.VERSION, NEW_VERSION);
 
-      mockedPackageUtil.when(() -> PackageUtil.compareVersions("1.0.0", "2.0.0"))
+      mockedPackageUtil.when(() -> PackageUtil.compareVersions(VERSION, NEW_VERSION))
           .thenReturn(-1);
 
       int result = comparator.compare(map1, map2);
@@ -250,7 +254,7 @@ class AbstractResultComparatorTest {
     void shouldHandleNullValuesInStringComparison() {
       ConcreteResultComparator comparator = new ConcreteResultComparator(DependencyManagerConstants.GROUP);
       Map<String, Object> map1 = createMapWithValue(DependencyManagerConstants.GROUP, null);
-      Map<String, Object> map2 = createMapWithValue(DependencyManagerConstants.GROUP, "com.example");
+      Map<String, Object> map2 = createMapWithValue(DependencyManagerConstants.GROUP, PACKAGE_NAME);
 
       int result = comparator.compare(map1, map2);
 
@@ -264,8 +268,8 @@ class AbstractResultComparatorTest {
     @DisplayName("Should handle equal string values")
     void shouldHandleEqualStringValues() {
       ConcreteResultComparator comparator = new ConcreteResultComparator(DependencyManagerConstants.GROUP);
-      Map<String, Object> map1 = createMapWithValue(DependencyManagerConstants.GROUP, "com.example");
-      Map<String, Object> map2 = createMapWithValue(DependencyManagerConstants.GROUP, "com.example");
+      Map<String, Object> map1 = createMapWithValue(DependencyManagerConstants.GROUP, PACKAGE_NAME);
+      Map<String, Object> map2 = createMapWithValue(DependencyManagerConstants.GROUP, PACKAGE_NAME);
 
       int result = comparator.compare(map1, map2);
 
@@ -298,7 +302,7 @@ class AbstractResultComparatorTest {
     @Test
     @DisplayName("Should use general comparison for unknown fields")
     void shouldUseGeneralComparisonForUnknownFields() {
-      String unknownField = "unknownField";
+      String unknownField = UNKNOWN_FIELD;
       ConcreteResultComparator comparator = new ConcreteResultComparator(unknownField);
       Map<String, Object> map1 = createMapWithValue(unknownField, "valueA");
       Map<String, Object> map2 = createMapWithValue(unknownField, "valueB");
@@ -331,7 +335,7 @@ class AbstractResultComparatorTest {
     @DisplayName("Should handle null values in general comparison")
     void shouldHandleNullValuesInGeneralComparison() {
       // Given
-      String unknownField = "unknownField";
+      String unknownField = UNKNOWN_FIELD;
       ConcreteResultComparator comparator = new ConcreteResultComparator(unknownField);
       Map<String, Object> map1 = createMapWithValue(unknownField, null);
       Map<String, Object> map2 = createMapWithValue(unknownField, "value");
@@ -348,7 +352,7 @@ class AbstractResultComparatorTest {
     @DisplayName("Should handle both null values in general comparison")
     void shouldHandleBothNullValuesInGeneralComparison() {
       // Given
-      String unknownField = "unknownField";
+      String unknownField = UNKNOWN_FIELD;
       ConcreteResultComparator comparator = new ConcreteResultComparator(unknownField);
       Map<String, Object> map1 = createMapWithValue(unknownField, null);
       Map<String, Object> map2 = createMapWithValue(unknownField, null);

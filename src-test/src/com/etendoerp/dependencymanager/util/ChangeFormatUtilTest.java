@@ -17,6 +17,7 @@ import org.openbravo.erpCommon.utility.ComboTableData;
 import org.openbravo.erpCommon.utility.Utility;
 import org.openbravo.service.db.DalConnectionProvider;
 
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.RESULT_NOT_NULL_MESSAGE;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -129,7 +130,7 @@ class ChangeFormatUtilTest {
             currentFormat, VALIDATION_RULE, mockVariablesSecureApp, mockConnectionProvider);
 
         assertAll("Format list validation",
-            () -> assertNotNull(result, "Result should not be null"),
+            () -> assertNotNull(result, RESULT_NOT_NULL_MESSAGE),
             () -> assertEquals(2, result.size(), "Should return 2 format options"),
             () -> assertTrue(result.contains(expectedId1), "Should contain FORMAT_SOURCE"),
             () -> assertTrue(result.contains(expectedId2), "Should contain FORMAT_JAR")
@@ -154,7 +155,7 @@ class ChangeFormatUtilTest {
             currentFormat, VALIDATION_RULE, mockVariablesSecureApp, mockConnectionProvider);
 
         assertAll("Empty list validation",
-            () -> assertNotNull(result, "Result should not be null"),
+            () -> assertNotNull(result, RESULT_NOT_NULL_MESSAGE),
             () -> assertTrue(result.isEmpty(), "Should return empty list")
         );
       }
@@ -205,7 +206,7 @@ class ChangeFormatUtilTest {
             mockConnectionProvider, mockVariablesSecureApp, VALIDATION_RULE, invalidFormat);
 
         assertAll("Invalid format validation",
-            () -> assertNotNull(result, "Result should not be null"),
+            () -> assertNotNull(result, RESULT_NOT_NULL_MESSAGE),
             () -> assertEquals(0, result.length, "Should return empty array for invalid format")
         );
       }
@@ -243,15 +244,13 @@ class ChangeFormatUtilTest {
       String currentFormat = DependencyUtil.FORMAT_LOCAL;
 
       try (var ignored = mockConstruction(ComboTableData.class,
-          (mock, context) -> {
-            when(mock.select(false)).thenReturn(null);
-          })) {
+          (mock, context) -> when(mock.select(false)).thenReturn(null))) {
 
         FieldProvider[] result = ChangeFormatUtil.getNewFormatCombo(
             mockConnectionProvider, mockVariablesSecureApp, VALIDATION_RULE, currentFormat);
 
         assertAll("Null combo options validation",
-            () -> assertNotNull(result, "Result should not be null"),
+            () -> assertNotNull(result, RESULT_NOT_NULL_MESSAGE),
             () -> assertEquals(0, result.length, "Should return empty array when combo options is null")
         );
       }

@@ -1,5 +1,7 @@
 package com.etendoerp.dependencymanager.process;
 
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.MESSAGE;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.TEST_CONTENT;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -115,13 +117,13 @@ class AddLocalDependenciesTest {
   void shouldSuccessfullyAddLocalDependencies() {
     setupSuccessfulExecution();
 
-    JSONObject result = addLocalDependencies.execute(new HashMap<>(), "test-content");
+    JSONObject result = addLocalDependencies.execute(new HashMap<>(), TEST_CONTENT);
 
     assertAll("Success response validation",
         () -> assertNotNull(result, "Result should not be null"),
-        () -> assertTrue(result.has("message"), "Result should have message"),
+        () -> assertTrue(result.has(MESSAGE), "Result should have message"),
         () -> {
-          JSONObject message = result.getJSONObject("message");
+          JSONObject message = result.getJSONObject(MESSAGE);
           assertAll("Message content validation",
               () -> assertEquals("success", message.getString("severity"), "Severity should be success"),
               () -> assertEquals("Success", message.getString("title"), "Title should be Success"),
@@ -146,13 +148,13 @@ class AddLocalDependenciesTest {
   void shouldHandleNoModulesToAdd() {
     setupNoModulesScenario();
 
-    JSONObject result = addLocalDependencies.execute(new HashMap<>(), "test-content");
+    JSONObject result = addLocalDependencies.execute(new HashMap<>(), TEST_CONTENT);
 
     assertAll("No modules scenario validation",
         () -> assertNotNull(result),
-        () -> assertTrue(result.has("message")),
+        () -> assertTrue(result.has(MESSAGE)),
         () -> {
-          JSONObject message = result.getJSONObject("message");
+          JSONObject message = result.getJSONObject(MESSAGE);
           assertEquals("success", message.getString("severity"));
           assertTrue(message.getString("text").contains("0"));
         }
@@ -175,8 +177,8 @@ class AddLocalDependenciesTest {
     when(mockDependencyCriteria.list()).thenReturn(existingDeps);
 
     List<Module> modulesToAdd = Arrays.asList(
-        createMockModule("com.example.new.module1", "1.0.0", "New Module 1"),
-        createMockModule("org.custom.new.module2", "2.0.0", "New Module 2")
+        createMockModule("com.example.new.module1", "1.0.0"),
+        createMockModule("org.custom.new.module2", "2.0.0")
     );
 
     when(mockOBDal.createCriteria(Module.class)).thenReturn(mockModuleCriteria);
@@ -221,11 +223,9 @@ class AddLocalDependenciesTest {
    *     the Java package of the module.
    * @param version
    *     the version of the module.
-   * @param name
-   *     the name of the module.
    * @return the mocked `Module` entity.
    */
-  private Module createMockModule(String javaPackage, String version, String name) {
+  private Module createMockModule(String javaPackage, String version) {
     Module module = mock(Module.class);
     when(module.getJavaPackage()).thenReturn(javaPackage);
     when(module.getVersion()).thenReturn(version);
@@ -249,9 +249,9 @@ class AddLocalDependenciesTest {
     when(mockModuleCriteria.add(any())).thenReturn(mockModuleCriteria);
     when(mockModuleCriteria.list()).thenReturn(new ArrayList<>());
 
-    JSONObject result = addLocalDependencies.execute(new HashMap<>(), "test-content");
+    JSONObject result = addLocalDependencies.execute(new HashMap<>(), TEST_CONTENT);
 
-    JSONObject message = result.getJSONObject("message");
+    JSONObject message = result.getJSONObject(MESSAGE);
     assertTrue(message.getString("text").contains("0"),
         "Should not add any dependencies when only core modules exist");
 

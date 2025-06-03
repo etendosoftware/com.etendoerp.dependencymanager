@@ -1,5 +1,11 @@
 package com.etendoerp.dependencymanager.process;
 
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.BUILD_DEPENDENCY_INFO;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.INVALID;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.NEW_VERSION;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.TEST_PACKAGE;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.UPDATED_ARTIFACT;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.VERSION;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -145,9 +151,9 @@ class SelectorChangeVersionTest {
   @DisplayName("Should handle invalid version format gracefully")
   void testIsCoreVersionCompatibleInvalidFormat() {
     assertAll("Invalid version format handling",
-        () -> assertFalse(selectorChangeVersion.isCoreVersionCompatible("invalid", "1.0.0", "2.0.0")),
-        () -> assertFalse(selectorChangeVersion.isCoreVersionCompatible("1.0.0", "invalid", "2.0.0")),
-        () -> assertFalse(selectorChangeVersion.isCoreVersionCompatible("1.0.0", "1.0.0", "invalid"))
+        () -> assertFalse(selectorChangeVersion.isCoreVersionCompatible(INVALID, VERSION, NEW_VERSION)),
+        () -> assertFalse(selectorChangeVersion.isCoreVersionCompatible(VERSION, INVALID, NEW_VERSION)),
+        () -> assertFalse(selectorChangeVersion.isCoreVersionCompatible(VERSION, VERSION, INVALID))
     );
   }
 
@@ -184,15 +190,15 @@ class SelectorChangeVersionTest {
   @DisplayName("Should build dependency info correctly for new dependency")
   void testBuildDependencyInfoNewDependency() throws Exception {
     String key = "com.test:new-artifact";
-    PackageDependency newDep = createMockDependency("com.test", "new-artifact", "1.0.0");
+    PackageDependency newDep = createMockDependency(TEST_PACKAGE, "new-artifact", VERSION);
 
     java.lang.reflect.Method method = SelectorChangeVersion.class
-        .getDeclaredMethod("buildDependencyInfo", String.class, PackageDependency.class, PackageDependency.class);
+        .getDeclaredMethod(BUILD_DEPENDENCY_INFO, String.class, PackageDependency.class, PackageDependency.class);
     method.setAccessible(true);
     JSONObject result = (JSONObject) method.invoke(selectorChangeVersion, key, null, newDep);
 
     assertNotNull(result, "Should return dependency info");
-    assertEquals("com.test", result.getString("group"));
+    assertEquals(TEST_PACKAGE, result.getString("group"));
     assertEquals("new-artifact", result.getString("artifact"));
     assertEquals("", result.optString("versionV1", ""));
     assertEquals("[New Dependency]", result.getString("status"));
@@ -208,17 +214,17 @@ class SelectorChangeVersionTest {
   @DisplayName("Should build dependency info correctly for updated dependency")
   void testBuildDependencyInfoUpdatedDependency() throws Exception {
     String key = "com.test:updated-artifact";
-    PackageDependency oldDep = createMockDependency("com.test", "updated-artifact", "1.0.0");
-    PackageDependency newDep = createMockDependency("com.test", "updated-artifact", "2.0.0");
+    PackageDependency oldDep = createMockDependency(TEST_PACKAGE, UPDATED_ARTIFACT, VERSION);
+    PackageDependency newDep = createMockDependency(TEST_PACKAGE, UPDATED_ARTIFACT, NEW_VERSION);
 
     java.lang.reflect.Method method = SelectorChangeVersion.class
-        .getDeclaredMethod("buildDependencyInfo", String.class, PackageDependency.class, PackageDependency.class);
+        .getDeclaredMethod(BUILD_DEPENDENCY_INFO, String.class, PackageDependency.class, PackageDependency.class);
     method.setAccessible(true);
     JSONObject result = (JSONObject) method.invoke(selectorChangeVersion, key, oldDep, newDep);
 
     assertNotNull(result, "Should return dependency info");
-    assertEquals("com.test", result.getString("group"));
-    assertEquals("updated-artifact", result.getString("artifact"));
+    assertEquals(TEST_PACKAGE, result.getString("group"));
+    assertEquals(UPDATED_ARTIFACT, result.getString("artifact"));
     assertEquals("[Updated]", result.getString("status"));
   }
 
@@ -232,11 +238,11 @@ class SelectorChangeVersionTest {
   @DisplayName("Should return null for unchanged dependency")
   void testBuildDependencyInfoUnchangedDependency() throws Exception {
     String key = "com.test:unchanged-artifact";
-    PackageDependency sameDep1 = createMockDependency("com.test", "unchanged-artifact", "1.0.0");
-    PackageDependency sameDep2 = createMockDependency("com.test", "unchanged-artifact", "1.0.0");
+    PackageDependency sameDep1 = createMockDependency(TEST_PACKAGE, "unchanged-artifact", VERSION);
+    PackageDependency sameDep2 = createMockDependency(TEST_PACKAGE, "unchanged-artifact", VERSION);
 
     java.lang.reflect.Method method = SelectorChangeVersion.class
-        .getDeclaredMethod("buildDependencyInfo", String.class, PackageDependency.class, PackageDependency.class);
+        .getDeclaredMethod(BUILD_DEPENDENCY_INFO, String.class, PackageDependency.class, PackageDependency.class);
     method.setAccessible(true);
     JSONObject result = (JSONObject) method.invoke(selectorChangeVersion, key, sameDep1, sameDep2);
 

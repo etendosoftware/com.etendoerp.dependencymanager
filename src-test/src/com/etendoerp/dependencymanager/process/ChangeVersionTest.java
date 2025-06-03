@@ -1,5 +1,17 @@
 package com.etendoerp.dependencymanager.process;
 
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.ARTIFACT;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.BOOLEAN_FALSE;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.GROUP;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.NEW_VERSION;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.PACK_ARTIFACT;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.RESULT_NOT_NULL_MESSAGE;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.STATUS;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.TEST_DEPENDENCY_ID;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.TEST_PACKAGE;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.VERSION;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.VERSION_V1;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.VERSION_V2;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -96,18 +108,37 @@ class ChangeVersionTest {
     @Test
     @DisplayName("Should successfully change to new package version")
     void shouldSuccessfullyChangeToNewPackageVersion() throws Exception {
-      String dependencyId = "test-dependency-id";
+      String dependencyId = TEST_DEPENDENCY_ID;
       String newVersionId = "test-version-id";
-      String content = createValidJsonContent(dependencyId, newVersionId, "false");
+      String content = createValidJsonContent(dependencyId, newVersionId, BOOLEAN_FALSE);
       Map<String, Object> parameters = new HashMap<>();
 
-      setupSuccessfulVersionChangeMocks(dependencyId, newVersionId);
+      when(mockOBDal.get(Dependency.class, dependencyId)).thenReturn(mockDependency);
+      when(mockDependency.getEntityName()).thenReturn("Test Dependency");
+      when(mockDependency.getVersion()).thenReturn(VERSION);
+      when(mockDependency.getGroup()).thenReturn(TEST_PACKAGE);
+      when(mockDependency.getArtifact()).thenReturn("test-artifact");
 
+      when(mockOBDal.get(PackageVersion.class, newVersionId)).thenReturn(mockPackageVersion);
+      when(mockPackageVersion.getVersion()).thenReturn(NEW_VERSION);
+      when(mockPackageVersion.getPackage()).thenReturn(mockPackage);
+
+      when(mockLatestVersion.getVersion()).thenReturn("2.1.0");
+      mockedStaticPackageUtil.when(() -> PackageUtil.getLastPackageVersion(mockPackage))
+          .thenReturn(mockLatestVersion);
+
+      when(mockSelector.fetchPackageByGroupAndArtifact(TEST_PACKAGE, "test-artifact"))
+          .thenReturn(mockPackage);
+      when(mockSelector.getDependenciesMap(eq(mockPackage), anyString()))
+          .thenReturn(new HashMap<>());
+
+      mockedStaticPackageUtil.when(() -> PackageUtil.updateOrCreateDependency(anyString(), anyString(), anyString()))
+          .thenAnswer(invocation -> null);
       JSONObject result = changeVersion.doExecute(parameters, content);
 
       assertAll("Version change should be successful",
           () -> assertNotNull(result, "Result should not be null"),
-          () -> verify(mockDependency).setVersion("2.0.0"),
+          () -> verify(mockDependency).setVersion(NEW_VERSION),
           () -> verify(mockDependency).setInstallationStatus("PENDING"),
           () -> verify(mockOBDal).save(mockDependency),
           () -> verify(mockOBDal).flush(),
@@ -121,11 +152,11 @@ class ChangeVersionTest {
     @Test
     @DisplayName("Should successfully change to external dependency version")
     void shouldSuccessfullyChangeToExternalDependencyVersion() throws Exception {
-      String dependencyId = "test-dependency-id";
+      String dependencyId = TEST_DEPENDENCY_ID;
       String content = createExternalDependencyJsonContent(dependencyId, "3.0.0-EXTERNAL");
       Map<String, Object> parameters = new HashMap<>();
 
-      setupExternalDependencyMocks(dependencyId);
+      when(mockOBDal.get(Dependency.class, dependencyId)).thenReturn(mockDependency);
 
       JSONObject result = changeVersion.doExecute(parameters, content);
 
@@ -148,7 +179,7 @@ class ChangeVersionTest {
     @DisplayName("Should throw exception when dependency not found")
     void shouldThrowExceptionWhenDependencyNotFound() throws Exception {
       String dependencyId = "non-existent-dependency";
-      String content = createValidJsonContent(dependencyId, "test-version-id", "false");
+      String content = createValidJsonContent(dependencyId, "test-version-id", BOOLEAN_FALSE);
       Map<String, Object> parameters = new HashMap<>();
 
       when(mockOBDal.get(Dependency.class, dependencyId)).thenReturn(null);
@@ -157,7 +188,7 @@ class ChangeVersionTest {
 
       JSONObject result = changeVersion.doExecute(parameters, content);
 
-      assertNotNull(result, "Result should not be null even on error");
+      assertNotNull(result, RESULT_NOT_NULL_MESSAGE);
       verify(mockOBDal, never()).save(any());
       mockedStaticOBContext.verify(OBContext::restorePreviousMode);
     }
@@ -165,9 +196,9 @@ class ChangeVersionTest {
     @Test
     @DisplayName("Should throw exception when package version not found")
     void shouldThrowExceptionWhenPackageVersionNotFound() throws Exception {
-      String dependencyId = "test-dependency-id";
+      String dependencyId = TEST_DEPENDENCY_ID;
       String newVersionId = "non-existent-version";
-      String content = createValidJsonContent(dependencyId, newVersionId, "false");
+      String content = createValidJsonContent(dependencyId, newVersionId, BOOLEAN_FALSE);
       Map<String, Object> parameters = new HashMap<>();
 
       when(mockOBDal.get(Dependency.class, dependencyId)).thenReturn(mockDependency);
@@ -177,14 +208,14 @@ class ChangeVersionTest {
 
       JSONObject result = changeVersion.doExecute(parameters, content);
 
-      assertNotNull(result, "Result should not be null even on error");
+      assertNotNull(result, RESULT_NOT_NULL_MESSAGE);
       verify(mockOBDal, never()).save(any());
     }
 
     @Test
     @DisplayName("Should throw exception when external version is empty")
     void shouldThrowExceptionWhenExternalVersionIsEmpty() throws Exception {
-      String dependencyId = "test-dependency-id";
+      String dependencyId = TEST_DEPENDENCY_ID;
       String content = createExternalDependencyJsonContent(dependencyId, "");
       Map<String, Object> parameters = new HashMap<>();
 
@@ -194,7 +225,7 @@ class ChangeVersionTest {
 
       JSONObject result = changeVersion.doExecute(parameters, content);
 
-      assertNotNull(result, "Result should not be null even on error");
+      assertNotNull(result, RESULT_NOT_NULL_MESSAGE);
       verify(mockOBDal, never()).save(any());
     }
 
@@ -225,19 +256,19 @@ class ChangeVersionTest {
       Map<String, PackageDependency> updateDeps = new HashMap<>();
 
       PackageDependency newDep = mock(PackageDependency.class);
-      when(newDep.getVersion()).thenReturn("2.0.0");
-      updateDeps.put("com.test:artifact", newDep);
+      when(newDep.getVersion()).thenReturn(NEW_VERSION);
+      updateDeps.put(PACK_ARTIFACT, newDep);
 
-      String key = "com.test:artifact";
+      String key = PACK_ARTIFACT;
 
       JSONObject result = changeVersion.buildDependencyInfo(currentDeps, updateDeps, key);
 
       assertAll("Dependency info should be built correctly",
-          () -> assertEquals("com.test", result.getString("group")),
-          () -> assertEquals("artifact", result.getString("artifact")),
-          () -> assertEquals("", result.getString("version_v1")),
-          () -> assertEquals("2.0.0", result.getString("version_v2")),
-          () -> assertEquals("New Dependency", result.getString("status"))
+          () -> assertEquals(TEST_PACKAGE, result.getString(GROUP)),
+          () -> assertEquals(ARTIFACT, result.getString(ARTIFACT)),
+          () -> assertEquals("", result.getString(VERSION_V1)),
+          () -> assertEquals(NEW_VERSION, result.getString(VERSION_V2)),
+          () -> assertEquals("New Dependency", result.getString(STATUS))
       );
     }
 
@@ -250,21 +281,21 @@ class ChangeVersionTest {
       PackageDependency currentDep = mock(PackageDependency.class);
       PackageDependency updatedDep = mock(PackageDependency.class);
 
-      when(currentDep.getVersion()).thenReturn("1.0.0");
-      when(updatedDep.getVersion()).thenReturn("2.0.0");
+      when(currentDep.getVersion()).thenReturn(VERSION);
+      when(updatedDep.getVersion()).thenReturn(NEW_VERSION);
 
-      String key = "com.test:artifact";
+      String key = PACK_ARTIFACT;
       currentDeps.put(key, currentDep);
       updateDeps.put(key, updatedDep);
 
       JSONObject result = changeVersion.buildDependencyInfo(currentDeps, updateDeps, key);
 
       assertAll("Updated dependency info should be built correctly",
-          () -> assertEquals("com.test", result.getString("group")),
-          () -> assertEquals("artifact", result.getString("artifact")),
-          () -> assertEquals("1.0.0", result.getString("version_v1")),
-          () -> assertEquals("2.0.0", result.getString("version_v2")),
-          () -> assertEquals("Updated", result.getString("status"))
+          () -> assertEquals(TEST_PACKAGE, result.getString(GROUP)),
+          () -> assertEquals(ARTIFACT, result.getString(ARTIFACT)),
+          () -> assertEquals(VERSION, result.getString(VERSION_V1)),
+          () -> assertEquals(NEW_VERSION, result.getString(VERSION_V2)),
+          () -> assertEquals("Updated", result.getString(STATUS))
       );
     }
 
@@ -275,20 +306,20 @@ class ChangeVersionTest {
       Map<String, PackageDependency> updateDeps = new HashMap<>();
 
       PackageDependency sameDep = mock(PackageDependency.class);
-      when(sameDep.getVersion()).thenReturn("1.0.0");
+      when(sameDep.getVersion()).thenReturn(VERSION);
 
-      String key = "com.test:artifact";
+      String key = PACK_ARTIFACT;
       currentDeps.put(key, sameDep);
       updateDeps.put(key, sameDep);
 
       JSONObject result = changeVersion.buildDependencyInfo(currentDeps, updateDeps, key);
 
       assertAll("Unchanged dependency info should be built correctly",
-          () -> assertEquals("com.test", result.getString("group")),
-          () -> assertEquals("artifact", result.getString("artifact")),
-          () -> assertEquals("1.0.0", result.getString("version_v1")),
-          () -> assertEquals("1.0.0", result.getString("version_v2")),
-          () -> assertFalse(result.has("status"), "Status should not be present for unchanged dependencies")
+          () -> assertEquals(TEST_PACKAGE, result.getString(GROUP)),
+          () -> assertEquals(ARTIFACT, result.getString(ARTIFACT)),
+          () -> assertEquals(VERSION, result.getString(VERSION_V1)),
+          () -> assertEquals(VERSION, result.getString(VERSION_V2)),
+          () -> assertFalse(result.has(STATUS), "Status should not be present for unchanged dependencies")
       );
     }
   }
@@ -316,33 +347,5 @@ class ChangeVersionTest {
     content.put("inpisexternaldependency", "true");
 
     return content.toString();
-  }
-
-  private void setupSuccessfulVersionChangeMocks(String dependencyId, String newVersionId) {
-    when(mockOBDal.get(Dependency.class, dependencyId)).thenReturn(mockDependency);
-    when(mockDependency.getEntityName()).thenReturn("Test Dependency");
-    when(mockDependency.getVersion()).thenReturn("1.0.0");
-    when(mockDependency.getGroup()).thenReturn("com.test");
-    when(mockDependency.getArtifact()).thenReturn("test-artifact");
-
-    when(mockOBDal.get(PackageVersion.class, newVersionId)).thenReturn(mockPackageVersion);
-    when(mockPackageVersion.getVersion()).thenReturn("2.0.0");
-    when(mockPackageVersion.getPackage()).thenReturn(mockPackage);
-
-    when(mockLatestVersion.getVersion()).thenReturn("2.1.0");
-    mockedStaticPackageUtil.when(() -> PackageUtil.getLastPackageVersion(mockPackage))
-        .thenReturn(mockLatestVersion);
-
-    when(mockSelector.fetchPackageByGroupAndArtifact("com.test", "test-artifact"))
-        .thenReturn(mockPackage);
-    when(mockSelector.getDependenciesMap(eq(mockPackage), anyString()))
-        .thenReturn(new HashMap<>());
-
-    mockedStaticPackageUtil.when(() -> PackageUtil.updateOrCreateDependency(anyString(), anyString(), anyString()))
-        .thenAnswer(invocation -> null);
-  }
-
-  private void setupExternalDependencyMocks(String dependencyId) {
-    when(mockOBDal.get(Dependency.class, dependencyId)).thenReturn(mockDependency);
   }
 }

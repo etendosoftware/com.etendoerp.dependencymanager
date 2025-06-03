@@ -1,5 +1,10 @@
 package com.etendoerp.dependencymanager.process;
 
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.DEPENDENCIES;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.MESSAGE;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.MODULE_ETENDO;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.VERSION;
+import static com.etendoerp.dependencymanager.DependencyManagerTestConstants.VERSION_1_1_0;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -117,16 +122,16 @@ class SelectLatestCompVersionsTest {
    */
   @Test
   @DisplayName("Should handle compatible dependency update successfully")
-  void testExecute_CompatibleDependencyUpdate() throws Exception {
+  void testExecuteCompatibleDependencyUpdate() throws Exception {
     setupBasicMocks();
 
-    String content = createTestContent("com.etendo", "test-module", "1.0.0");
-    JSONObject compatibilityInfo = createCompatibilityInfo(true, "1.1.0", "1.0.0-2.0.0", "1.5.0");
+    String content = createTestContent(MODULE_ETENDO, "test-module", VERSION);
+    JSONObject compatibilityInfo = createCompatibilityInfo(true, VERSION_1_1_0, "1.0.0-2.0.0");
 
     when(mockCriteria.uniqueResult()).thenReturn(mockPackage);
     packageUtilMockedStatic.when(() -> PackageUtil.getCoreCompatibleOrLatestVersion(mockPackage))
-        .thenReturn("1.1.0");
-    packageUtilMockedStatic.when(() -> PackageUtil.checkCoreCompatibility(mockPackage, "1.1.0"))
+        .thenReturn(VERSION_1_1_0);
+    packageUtilMockedStatic.when(() -> PackageUtil.checkCoreCompatibility(mockPackage, VERSION_1_1_0))
         .thenReturn(compatibilityInfo);
 
     JSONObject result = selectLatestCompVersions.execute(parameters, content);
@@ -134,18 +139,18 @@ class SelectLatestCompVersionsTest {
     assertAll("Compatible dependency update assertions",
         () -> assertNotNull(result, "Result should not be null"),
         () -> assertFalse(result.has("true"), "Should not have warning flag for compatible dependency"),
-        () -> assertTrue(result.has("message"), "Should contain message"),
-        () -> assertTrue(result.has("dependencies"), "Should contain dependencies array"),
+        () -> assertTrue(result.has(MESSAGE), "Should contain message"),
+        () -> assertTrue(result.has(DEPENDENCIES), "Should contain dependencies array"),
         () -> {
-          JSONArray deps = result.getJSONArray("dependencies");
+          JSONArray deps = result.getJSONArray(DEPENDENCIES);
           assertEquals(1, deps.length(), "Should have one dependency");
           assertEquals("com.etendo.test-module", deps.getString(0), "Dependency name should match");
         },
         () -> {
-          String message = result.getString("message");
+          String message = result.getString(MESSAGE);
           assertTrue(message.contains("com.etendo.test-module"), "Message should contain dependency name");
           assertTrue(message.contains("Updating to latest version"), "Message should indicate update");
-          assertTrue(message.contains("1.1.0"), "Message should contain new version");
+          assertTrue(message.contains(VERSION_1_1_0), "Message should contain new version");
         }
     );
   }
@@ -162,21 +167,21 @@ class SelectLatestCompVersionsTest {
   void testExecuteNoUpdatesAvailable() throws Exception {
     setupBasicMocks();
 
-    String content = createTestContent("com.etendo", "current-module", "1.0.0");
-    JSONObject compatibilityInfo = createCompatibilityInfo(true, "1.0.0", "1.0.0-2.0.0", "1.5.0");
+    String content = createTestContent(MODULE_ETENDO, "current-module", VERSION);
+    JSONObject compatibilityInfo = createCompatibilityInfo(true, VERSION, "1.0.0-2.0.0");
 
     when(mockCriteria.uniqueResult()).thenReturn(mockPackage);
     packageUtilMockedStatic.when(() -> PackageUtil.getCoreCompatibleOrLatestVersion(mockPackage))
-        .thenReturn("1.0.0");
-    packageUtilMockedStatic.when(() -> PackageUtil.checkCoreCompatibility(mockPackage, "1.0.0"))
+        .thenReturn(VERSION);
+    packageUtilMockedStatic.when(() -> PackageUtil.checkCoreCompatibility(mockPackage, VERSION))
         .thenReturn(compatibilityInfo);
 
     JSONObject result = selectLatestCompVersions.execute(parameters, content);
 
     assertAll("No updates assertions",
         () -> assertNotNull(result, "Result should not be null"),
-        () -> assertFalse(result.has("message"), "Should not have message when no updates"),
-        () -> assertFalse(result.has("dependencies"), "Should not have dependencies when no updates"),
+        () -> assertFalse(result.has(MESSAGE), "Should not have message when no updates"),
+        () -> assertFalse(result.has(DEPENDENCIES), "Should not have dependencies when no updates"),
         () -> assertEquals(0, result.length(), "Result should be empty when no updates available")
     );
   }
@@ -190,16 +195,14 @@ class SelectLatestCompVersionsTest {
    */
   @Test
   @DisplayName("Should handle null package gracefully")
-  void testExecute_NullPackage() throws Exception {
+  void testExecuteNullPackage() throws Exception {
     setupBasicMocks();
 
-    String content = createTestContent("com.etendo", "missing-module", "1.0.0");
+    String content = createTestContent(MODULE_ETENDO, "missing-module", VERSION);
 
     when(mockCriteria.uniqueResult()).thenReturn(null);
 
-    assertThrows(NullPointerException.class, () -> {
-      selectLatestCompVersions.execute(parameters, content);
-    }, "Should throw NullPointerException when package is not found");
+    assertThrows(NullPointerException.class, () -> selectLatestCompVersions.execute(parameters, content), "Should throw NullPointerException when package is not found");
   }
 
   /**
@@ -211,9 +214,7 @@ class SelectLatestCompVersionsTest {
   void testExecuteMalformedJSON() {
     String malformedContent = "{ invalid json }";
 
-    assertThrows(OBException.class, () -> {
-      selectLatestCompVersions.execute(parameters, malformedContent);
-    }, "Should throw OBException for malformed JSON");
+    assertThrows(OBException.class, () -> selectLatestCompVersions.execute(parameters, malformedContent), "Should throw OBException for malformed JSON");
   }
 
   /**
@@ -249,8 +250,6 @@ class SelectLatestCompVersionsTest {
    *
    * @param isCompatible
    *     whether the dependency is compatible
-   * @param newVersion
-   *     the new version of the dependency
    * @param coreVersionRange
    *     the compatible core version range
    * @param currentCoreVersion
@@ -259,7 +258,7 @@ class SelectLatestCompVersionsTest {
    * @throws JSONException
    *     if there is an error creating the JSON object
    */
-  private JSONObject createCompatibilityInfo(boolean isCompatible, String newVersion,
+  private JSONObject createCompatibilityInfo(boolean isCompatible,
       String coreVersionRange, String currentCoreVersion) throws JSONException {
     JSONObject info = new JSONObject();
     info.put(PackageUtil.IS_COMPATIBLE, isCompatible);
