@@ -7,7 +7,7 @@
 */
 
 group          = "com.etendoerp"
-version        = "3.1.0"
+version        = "3.2.0"
 description    = "Dependency Manager"
 ext.artifact   = "dependencymanager"
 ext.repository = "https://maven.pkg.github.com/etendosoftware/com.etendoerp.dependencymanager"
@@ -52,7 +52,7 @@ repositories {
 * Ex: implementation "com.sun.mail:javax.mail:1.6.2"
 */
 dependencies {
-    implementation('com.etendoerp.platform:etendo-core:[25.1.0,25.3.0)')
+    implementation('com.etendoerp.platform:etendo-core:[25.1.0,25.4.0)')
 }
 
 
